@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Bounce2.h>
+#include "lock.h"
 
 //#define USE_MODEL_NODEMCU32
 #define USE_MODEL_TTGOV2
