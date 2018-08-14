@@ -16,54 +16,25 @@
   #define PIN_LOCK_LATCH_SWITCH GPIO_NUM_4 // (PULLUP!) LOW: closed, HIGH: open
 #endif
 
-bool firstBoot = true;
 
-Bounce debounceRotationSwitch = Bounce();
-Bounce debounceLatchSwitch = Bounce();
-
-bool shouldRotate = false;
+Lock lock;
 
 void setup() {
   Serial.begin(115200);
+  lock = Lock();
 
-  pinMode(PIN_LOCK_LATCH_SWITCH, INPUT_PULLUP);
-  pinMode(PIN_LOCK_ROTATION_SWITCH, INPUT_PULLUP);
-  pinMode(PIN_LOCK_MOTOR, OUTPUT);
-
-  debounceRotationSwitch.attach(PIN_LOCK_ROTATION_SWITCH);
-  debounceRotationSwitch.interval(5);
-
-  debounceLatchSwitch.attach(PIN_LOCK_LATCH_SWITCH);
-  debounceLatchSwitch.interval(5);
-
-  Serial.println('msg="hello world" version=0.0.1');
+  Serial.println("msg='hello world' version=0.0.2");
 }
 
 void loop() {
-  debounceRotationSwitch.update();
-  debounceLatchSwitch.update();
-
-  if (debounceRotationSwitch.read() == HIGH) {
-    shouldRotate = false;
-  }
-
-  if (debounceLatchSwitch.read() == LOW) {
-    shouldRotate = true;
-  }
-
-  if (firstBoot || millis() % 1000 == 0) {
-    firstBoot = false;
-    float sec = (float) millis() / 1000.0;
-    Serial.printf("time=%.3f rotation=%d latch=%d shouldRotate=%d\n",
-      sec,
-      debounceRotationSwitch.read(),
-      debounceLatchSwitch.read(),
-      shouldRotate);
-  }
-
-  if (shouldRotate) {
-    digitalWrite(PIN_LOCK_MOTOR, HIGH);
+  if (!lock.isOpen()) {
+    Serial.println("closed");
+    lock.open();
   } else {
-    digitalWrite(PIN_LOCK_MOTOR, LOW);
+    delay(1000);
+    if (!lock.motorIsParked()){
+      lock.open();
+    }
+    Serial.println("is Open");
   }
 }

@@ -24,9 +24,18 @@ void Lock::open() {
 	while(!Lock::isOpen()) {
 		digitalWrite(PIN_LOCK_MOTOR, HIGH);
 	}
+	while(!Lock::motorIsParked()){
+		digitalWrite(PIN_LOCK_MOTOR, HIGH);
+	}
 	digitalWrite(PIN_LOCK_MOTOR, LOW);
 }
 
 bool Lock::isOpen() {
-	return (Lock::debounceLatchSwitch.read() == LOW);
+	debounceLatchSwitch.update();
+	return (Lock::debounceLatchSwitch.read() == HIGH);
+}
+
+bool Lock::motorIsParked() {
+	debounceRotationSwitch.update();
+	return Lock::debounceRotationSwitch.read() == HIGH;
 }
