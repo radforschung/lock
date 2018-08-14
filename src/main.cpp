@@ -30,7 +30,7 @@
   #define PIN_DIO2  LMIC_UNUSED_PIN // 32 HPDIO2 on pcb, needs to be wired external to GPIO32 (not necessary for LoRa, only FSK)
 #endif
 
-#include <config.h>
+#include "config.h"
 
 const unsigned TX_INTERVAL = 60;
 
