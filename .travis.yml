@@ -30,4 +30,5 @@ install:
     - pip install -U platformio
     - platformio update
 script:
+    - cp src/config.sample.h src/config.h
     - platformio ci --project-conf=platformio.ini .
