@@ -120,7 +120,6 @@ void do_send(osjob_t* j){
     Serial.printf("time=%.3f msg=\"sending packet\" loraseq=%d\n", ((float) millis() / 1000.0), LMIC.seqnoUp);
   }
   // Next TX is scheduled after TX_COMPLETE event.
-Lock lock;
   os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(TX_INTERVAL), do_send);
 }
 
@@ -179,6 +178,7 @@ void onEvent (ev_t ev) {
 }
 
 void loop() {
+  os_runloop_once();
   if (!lock.isOpen()) {
     Serial.println("closed");
     lock.open();
