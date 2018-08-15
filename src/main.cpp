@@ -34,6 +34,7 @@
 #include "config.h"
 
 const unsigned TX_INTERVAL = 60;
+Lock lock;
 
 void os_getArtEui (u1_t* buf) {}
 void os_getDevEui (u1_t* buf) {}
