@@ -4,3 +4,7 @@ radforschung lock
 ESP32 based smart lock for bicycles and other shared mobility devices.
 
 This is a work in progress. For more background see https://radforschung.org/log
+
+## lora config
+
+rename `src/config.sample.h` to `src/config.h` and insert your ttn application credentials.
