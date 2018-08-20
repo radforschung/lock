@@ -1,6 +1,4 @@
-#import "lock.h"
-#include <Arduino.h>
-#include <Bounce2.h>
+#include "globals.h"
 
 static const char* TAG = "lock";
 

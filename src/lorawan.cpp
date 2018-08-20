@@ -1,0 +1,97 @@
+#include "globals.h"
+
+static const char* TAG = "lora";
+
+const lmic_pinmap lmic_pins = {
+  .nss = PIN_SPI_SS,
+  .rxtx = LMIC_UNUSED_PIN,
+  .rst = PIN_RST,
+  .dio = {PIN_DIO0, PIN_DIO1, PIN_DIO2}
+};
+
+// they have to exist but do nothing:
+void os_getArtEui(u1_t* buf) {}
+void os_getDevEui(u1_t* buf) {}
+void os_getDevKey(u1_t* buf) {}
+
+void lorawan_init(Preferences preferences) {
+  // init spi before
+  SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, 0x00);
+
+  // initialize LoRaWAN LMIC run-time environment
+  os_init();
+
+  // reset LMIC MAC state
+  LMIC_reset();
+
+  // Set static session parameters.
+  // copy for esp
+  uint8_t appskey[sizeof(APPSKEY)];
+  uint8_t nwkskey[sizeof(NWKSKEY)];
+  memcpy_P(appskey, APPSKEY, sizeof(APPSKEY));
+  memcpy_P(nwkskey, NWKSKEY, sizeof(NWKSKEY));
+  LMIC_setSession(0x1, DEVADDR, nwkskey, appskey);
+
+  // setup EU channels
+  LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+  LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);      // g-band
+  LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+  LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+  LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+  LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+  LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+  LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
+  LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK,  DR_FSK),  BAND_MILLI);      // g2-band
+
+  // Disable link check validation
+  LMIC_setLinkCheckMode(0);
+
+  // TTN uses SF9 for its RX2 window.
+  LMIC.dn2Dr = DR_SF9;
+
+  // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
+  int txpower = 14;
+  LMIC_setDrTxpow(DR_SF12, txpower);
+
+  LMIC.seqnoUp = preferences.getUInt("counter", 1);
+  ESP_LOGD(TAG, "loraseq=%d", LMIC.seqnoUp);
+}
+
+// LMIC FreeRTos Task
+void lorawan_loop(void *pvParameters) {
+  configASSERT(((uint32_t)pvParameters) == 1); // FreeRTOS check
+  while (1) {
+    os_runloop_once();                  // execute LMIC jobs
+    vTaskDelay(1 / portTICK_PERIOD_MS); // reset watchdog
+  }
+}
+
+void onEvent(ev_t ev) {
+  if (ev == EV_RXCOMPLETE) {
+    // data received in ping slot
+    ESP_LOGD(TAG, "loraEvent=EV_RXCOMPLETE");
+    return;
+  }
+  if (ev == EV_TXCOMPLETE) {
+    ESP_LOGD(TAG, "loraEvent=EV_TXCOMPLETE");
+    if (LMIC.txrxFlags & TXRX_ACK) {
+      ESP_LOGD(TAG, "msg=\"Received ack\"");
+    }
+    if (LMIC.dataLen) {
+      ESP_LOGD(TAG, "payloadLength=%d", LMIC.dataLen);
+      Serial.print(F(" data=0x"));
+      for (int i = 0; i < LMIC.dataLen; i++) {
+        if (LMIC.frame[LMIC.dataBeg + i] < 0x10) {
+          Serial.print(F("0"));
+        }
+        Serial.print(LMIC.frame[LMIC.dataBeg + i], HEX);
+      }
+      Serial.println();
+
+      // FIXME: throw data into a parsing event
+    }
+
+    // FIXME: Schedule next transmission. maybe better in main?
+    //os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL), do_send);
+  }
+}
