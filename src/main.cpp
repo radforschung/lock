@@ -7,6 +7,9 @@
 #include <SPI.h>
 #include <Preferences.h>
 
+static const char* TAG = "main";
+static const char* LORA_TAG = "lora";
+
 //#define USE_MODEL_NODEMCU32
 #define USE_MODEL_TTGOV2
 
@@ -97,7 +100,7 @@ void setupLoRa() {
   LMIC_setDrTxpow(DR_SF12, txpower);
 
   LMIC.seqnoUp = preferences.getUInt("counter", 1);
-  Serial.printf("time=%.3f loraseq=%d\n", ((float) millis() / 1000.0), LMIC.seqnoUp);
+  ESP_LOGD(LORA_TAG, "loraseq=%d", LMIC.seqnoUp);
 }
 
 
@@ -112,12 +115,12 @@ void do_send(osjob_t* j){
 
   // Check if there is not a current TX/RX job running
   if (LMIC.opmode & OP_TXRXPEND) {
-    Serial.printf("time=%.3f msg=\"OP_TXRXPEND, not sending\" loraseq=%d\n", ((float) millis() / 1000.0), LMIC.seqnoUp);
+    ESP_LOGD(LORA_TAG, "msg=\"OP_TXRXPEND, not sending\" loraseq=%d", LMIC.seqnoUp);
   } else {
     // Prepare upstream data transmission at the next possible time.
     LMIC_setTxData2(1, message, sizeof(message)-1, 0);
     preferences.putUInt("counter", LMIC.seqnoUp);
-    Serial.printf("time=%.3f msg=\"sending packet\" loraseq=%d\n", ((float) millis() / 1000.0), LMIC.seqnoUp);
+    ESP_LOGD(LORA_TAG, "msg=\"sending packet\" loraseq=%d", LMIC.seqnoUp);
   }
   // Next TX is scheduled after TX_COMPLETE event.
   os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(TX_INTERVAL), do_send);
@@ -142,27 +145,24 @@ void setup() {
 
   setupLoRa();
 
-  Serial.println("msg=\"hello world\" version=0.0.1");
+  ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
 
   os_setCallback(&sendjob, do_send);
 }
 
 void onEvent (ev_t ev) {
-  Serial.printf("time=%.3f", ((float) millis() / 1000.0));
-  switch(ev) {
-    case EV_RXCOMPLETE:
-      // data received in ping slot
-      Serial.println(" loraEvent=EV_RXCOMPLETE");
-      break;
+  if (ev == EV_RXCOMPLETE) {
+    // data received in ping slot
+    ESP_LOGD(LORA_TAG, "loraEvent=EV_RXCOMPLETE");
+    return;
   }
   if (ev == EV_TXCOMPLETE) {
-    Serial.println(" loraEvent=EV_TXCOMPLETE");
+    ESP_LOGD(LORA_TAG, "loraEvent=EV_TXCOMPLETE");
     if (LMIC.txrxFlags & TXRX_ACK) {
-      Serial.println(" msg=\"Received ack\"");
+      ESP_LOGD(LORA_TAG, "msg=\"Received ack\"");
     }
     if (LMIC.dataLen) {
-      Serial.print(" msg=\"Received\" payloadLength=");
-      Serial.print(LMIC.dataLen);
+      ESP_LOGD(LORA_TAG, "payloadLength=%d", LMIC.dataLen);
       Serial.print(F(" data=0x"));
       for (int i = 0; i < LMIC.dataLen; i++) {
         if (LMIC.frame[LMIC.dataBeg + i] < 0x10) {
@@ -170,7 +170,6 @@ void onEvent (ev_t ev) {
         }
         Serial.print(LMIC.frame[LMIC.dataBeg + i], HEX);
       }
-      Serial.println();
     }
     // Schedule next transmission
     os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL), do_send);
@@ -180,13 +179,13 @@ void onEvent (ev_t ev) {
 void loop() {
   os_runloop_once();
   if (!lock.isOpen()) {
-    Serial.println("closed");
+    ESP_LOGD(TAG, "lock=closed");
     lock.open();
   } else {
     delay(1000);
     if (!lock.motorIsParked()){
       lock.open();
     }
-    Serial.println("is Open");
+    ESP_LOGD(TAG, "lock=open");
   }
 }
