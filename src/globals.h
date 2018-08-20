@@ -28,3 +28,6 @@
 
 #include "lock.h"
 #include "lorawan.h"
+
+extern QueueHandle_t taskQueue;
+static const int TASK_UNLOCK = 1;

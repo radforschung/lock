@@ -8,6 +8,7 @@ Preferences preferences;
 Lock lock;
 
 static osjob_t sendjob;
+QueueHandle_t taskQueue;
 
 void setupLoRa() {
   lorawan_init(preferences);
@@ -16,7 +17,6 @@ void setupLoRa() {
 }
 
 void do_send(osjob_t* j){
-  // Payload to send (uplink)
   uint8_t message[] = {0x01, 0x00, 0x00};
   if (!lock.isOpen()) {
     message[1] = 0x01;
@@ -46,8 +46,11 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   preferences.begin("lock32", false);
-
   lock = Lock();
+  taskQueue = xQueueCreate(10, sizeof(int));
+  if (taskQueue == NULL){
+    ESP_LOGW(TAG, "msg=\"error creating task queue\"");
+  }
 
   setupLoRa();
 
@@ -60,22 +63,31 @@ void setup() {
 boolean lastState = false;
 
 void loop() {
+  bool open = lock.isOpen();
   // report change
-  if (lastState != lock.isOpen()) {
+  if (lastState != open) {
     ESP_LOGD(TAG, "change=true");
     os_setCallback(&sendjob, do_send);
-    lastState = lock.isOpen();
+    lastState = open;
   }
 
-  if (!lock.isOpen()) {
+  if (!open) {
     ESP_LOGD(TAG, "lock=closed");
     //lock.open();
-    delay(1000);
   } else {
-    delay(1000);
     if (!lock.motorIsParked()){
       lock.open();
     }
     ESP_LOGD(TAG, "lock=open");
   }
+
+  int task;
+  xQueueReceive(taskQueue, &task, 0);
+  if (task) {
+    if (task == TASK_UNLOCK) {
+      lock.open();
+    }
+  }
+
+  delay(1000);
 }

@@ -89,9 +89,9 @@ void onEvent(ev_t ev) {
       Serial.println();
 
       // FIXME: throw data into a parsing event
+      if (LMIC.dataLen >= 2 && LMIC.frame[LMIC.dataBeg + 1] == 0x01) {
+        xQueueSend(taskQueue, &TASK_UNLOCK, portMAX_DELAY);
+      }
     }
-
-    // FIXME: Schedule next transmission. maybe better in main?
-    //os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL), do_send);
   }
 }
