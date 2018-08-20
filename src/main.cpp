@@ -53,13 +53,6 @@ const lmic_pinmap lmic_pins = {
 static osjob_t sendjob;
 Preferences preferences;
 
-bool firstBoot = true;
-
-Bounce debounceRotationSwitch = Bounce();
-Bounce debounceLatchSwitch = Bounce();
-
-bool shouldRotate = false;
-
 void setupLoRa() {
   // init spi before
   SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, 0x00);
@@ -123,25 +116,15 @@ void do_send(osjob_t* j){
     ESP_LOGD(LORA_TAG, "msg=\"sending packet\" loraseq=%d", LMIC.seqnoUp);
   }
   // Next TX is scheduled after TX_COMPLETE event.
-  os_setTimedCallback(&sendjob, os_getTime()+sec2osticks(TX_INTERVAL), do_send);
+  os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL), do_send);
 }
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  lock = Lock();
-
   preferences.begin("lock32", false);
 
-  pinMode(PIN_LOCK_LATCH_SWITCH, INPUT_PULLUP);
-  pinMode(PIN_LOCK_ROTATION_SWITCH, INPUT_PULLUP);
-  pinMode(PIN_LOCK_MOTOR, OUTPUT);
-
-  debounceRotationSwitch.attach(PIN_LOCK_ROTATION_SWITCH);
-  debounceRotationSwitch.interval(5);
-
-  debounceLatchSwitch.attach(PIN_LOCK_LATCH_SWITCH);
-  debounceLatchSwitch.interval(5);
+  lock = Lock();
 
   setupLoRa();
 
