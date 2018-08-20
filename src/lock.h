@@ -15,10 +15,13 @@
 #endif
 
 class Lock {
-	public: Lock();
-	public: void open();
-	public: bool isOpen();
-	public: bool motorIsParked();
-	private: Bounce debounceRotationSwitch;
-	private: Bounce debounceLatchSwitch;
+  public:
+	  Lock();
+    void open();
+    bool isOpen();
+    bool motorIsParked();
+
+	private:
+    Bounce debounceRotationSwitch;
+    Bounce debounceLatchSwitch;
 };

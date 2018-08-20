@@ -2,29 +2,28 @@
 #include <Arduino.h>
 #include <Bounce2.h>
 
-//Bounce debounceRotationSwitch = Bounce();
-//Bounce debounceLatchSwitch = Bounce();
+static const char* TAG = "lock";
 
 Lock::Lock() {
-	Lock::debounceRotationSwitch = Bounce();
-	Lock::debounceLatchSwitch = Bounce();
-	
+	debounceRotationSwitch = Bounce();
+	debounceLatchSwitch = Bounce();
+
 	pinMode(PIN_LOCK_LATCH_SWITCH, INPUT_PULLUP);
 	pinMode(PIN_LOCK_ROTATION_SWITCH, INPUT_PULLUP);
 	pinMode(PIN_LOCK_MOTOR, OUTPUT);
 
-	Lock::debounceRotationSwitch.attach(PIN_LOCK_ROTATION_SWITCH);
-	Lock::debounceRotationSwitch.interval(5);
+	debounceRotationSwitch.attach(PIN_LOCK_ROTATION_SWITCH);
+	debounceRotationSwitch.interval(5);
 
-	Lock::debounceLatchSwitch.attach(PIN_LOCK_LATCH_SWITCH);
-	Lock::debounceLatchSwitch.interval(5);
+	debounceLatchSwitch.attach(PIN_LOCK_LATCH_SWITCH);
+	debounceLatchSwitch.interval(5);
 }
 
 void Lock::open() {
-	while(!Lock::isOpen()) {
+	while(!isOpen()) {
 		digitalWrite(PIN_LOCK_MOTOR, HIGH);
 	}
-	while(!Lock::motorIsParked()){
+	while(!motorIsParked()){
 		digitalWrite(PIN_LOCK_MOTOR, HIGH);
 	}
 	digitalWrite(PIN_LOCK_MOTOR, LOW);
@@ -32,10 +31,12 @@ void Lock::open() {
 
 bool Lock::isOpen() {
 	debounceLatchSwitch.update();
-	return (Lock::debounceLatchSwitch.read() == HIGH);
+	ESP_LOGD(TAG, "latchSwitch=%d", debounceLatchSwitch.read());
+	return (debounceLatchSwitch.read() == HIGH);
 }
 
 bool Lock::motorIsParked() {
 	debounceRotationSwitch.update();
-	return Lock::debounceRotationSwitch.read() == HIGH;
+	ESP_LOGD(TAG, "rotationSwitch=%d", debounceRotationSwitch.read());
+	return debounceRotationSwitch.read() == HIGH;
 }
