@@ -85,7 +85,9 @@ void loop() {
   xQueueReceive(taskQueue, &task, 0);
   if (task) {
     if (task == TASK_UNLOCK) {
+      ESP_LOGD(TAG, "task=unlock");
       lock.open();
+      task = 0;
     }
   }
 
