@@ -1,4 +1,9 @@
 #include <Arduino.h>
+
+// overriding with our own, https://brandur.org/logfmt compatible log format:
+#undef ARDUHAL_LOG_FORMAT
+#define ARDUHAL_LOG_FORMAT(letter, format)  ARDUHAL_LOG_COLOR_ ## letter "time=%d level=" #letter " file=%s line=%u method=%s " format ARDUHAL_LOG_RESET_COLOR "\r\n", esp_log_timestamp(), pathToFileName(__FILE__), __LINE__, __FUNCTION__
+
 #include <Bounce2.h>
 #include <Preferences.h>
 
