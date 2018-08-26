@@ -10,7 +10,7 @@ Location location;
 
 static osjob_t sendjob;
 QueueHandle_t taskQueue;
-QueueHandle_t loraSendQueue;
+QueueHandle_t loraSendQueue = NULL;
 
 void setupLoRa() {
   loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
@@ -28,8 +28,10 @@ void sendLockStatus(osjob_t *j) {
   loraSend(msg);
 
   // Next TX is scheduled after TX_COMPLETE event.
-  os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL),
-                      sendLockStatus);
+  ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL);
+  os_setTimedCallback(&sendjob, nextSendAt, FUNC_ADDR(sendLockStatus));
+  ESP_LOGI(TAG, "do=schedule job=sendjob callback=sendLockStatus at=%lu",
+           nextSendAt);
 }
 
 void setup() {
@@ -50,7 +52,7 @@ void setup() {
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
   
   preferences.end();
-  os_setCallback(&sendjob, sendLockStatus);
+  os_setCallback(&sendjob, FUNC_ADDR(sendLockStatus));
 
   location = Location();
   location.scanWifis();
