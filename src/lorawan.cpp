@@ -89,3 +89,23 @@ void onEvent(ev_t ev) {
     }
   }
 }
+
+void processSendBuffer() {
+  // skip if LoRa is busy and don't get data from the queue
+  if ((LMIC.opmode & (OP_JOINING | OP_REJOIN | OP_TXDATA | OP_POLL)) != 0) {
+    return;
+  }
+
+  MessageBuffer_t sendBuffer;
+  if (xQueueReceive(loraSendQueue, &sendBuffer, (TickType_t)0) == pdTRUE) {
+    // sendBuffer now contains the MessageBuffer
+    // with the data to send from the queue
+    Preferences pref;
+    pref.begin("lock32", false);
+    LMIC_setTxData2(1, sendBuffer.Message, sendBuffer.MessageSize, 0);
+    pref.putUInt("counter", LMIC.seqnoUp);
+    ESP_LOGD(LORA_TAG, "msg=\"sending packet\" loraseq=%d bytes=%d",
+             LMIC.seqnoUp, sendBuffer.MessageSize);
+    pref.end();
+  }
+}

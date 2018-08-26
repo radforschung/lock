@@ -9,40 +9,34 @@ Lock lock;
 
 static osjob_t sendjob;
 QueueHandle_t taskQueue;
+QueueHandle_t loraSendQueue;
 
 void setupLoRa() {
+  loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
+  if (loraSendQueue == 0) {
+    ESP_LOGE(TAG, "error=\"creation of lora send queue failed\"");
+  }
   lorawan_init(preferences);
   ESP_LOGI(TAG, "start=loratask");
   xTaskCreatePinnedToCore(lorawan_loop, "loraloop", 2048, (void *)1,
                           (5 | portPRIVILEGE_BIT), NULL, 1);
 }
 
-void do_send(osjob_t *j) {
-  uint8_t message[] = {0x01, 0x00, 0x00};
-  if (!lock.isOpen()) {
-    message[1] = 0x01;
-  } else {
-    message[1] = 0x02;
-  }
+void sendLockStatus(osjob_t *j) {
+  uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02), 0x00};
 
-  // Check if there is not a current TX/RX job running
-  if (LMIC.opmode & OP_TXRXPEND) {
-    ESP_LOGD(LORA_TAG, "msg=\"OP_TXRXPEND, not sending\" loraseq=%d",
-             LMIC.seqnoUp);
-  } else {
-    Preferences pref;
-    pref.begin("lock32", false);
-    // Prepare upstream data transmission at the next possible time.
-    LMIC_setTxData2(1, message, sizeof(message) - 1, 0);
-    pref.putUInt("counter", LMIC.seqnoUp);
-    ESP_LOGD(LORA_TAG, "msg=\"sending packet\" loraseq=%d", LMIC.seqnoUp);
+  MessageBuffer_t sendBuffer;
+  sendBuffer.MessageSize = sizeof(msg) - 1;
+  memcpy(sendBuffer.Message, msg, sendBuffer.MessageSize);
 
-    pref.end();
+  if (xQueueSendToBack(loraSendQueue, (void *)&sendBuffer, (TickType_t)0) ==
+      pdTRUE) {
+    ESP_LOGI(TAG, "queue=loraSend action=add bytes=%d", sendBuffer.MessageSize);
   }
 
   // Next TX is scheduled after TX_COMPLETE event.
   os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL),
-                      do_send);
+                      sendLockStatus);
 }
 
 void setup() {
@@ -60,7 +54,7 @@ void setup() {
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
 
   preferences.end();
-  os_setCallback(&sendjob, do_send);
+  os_setCallback(&sendjob, sendLockStatus);
 }
 
 boolean lastState = false;
@@ -71,7 +65,7 @@ void loop() {
     // report change
     if (lastState != open) {
       ESP_LOGD(TAG, "change=true");
-      os_setCallback(&sendjob, do_send);
+      os_setCallback(&sendjob, sendLockStatus);
       lastState = open;
     }
 
@@ -94,6 +88,8 @@ void loop() {
         task = 0;
       }
     }
+
+    processSendBuffer();
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
