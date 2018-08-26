@@ -90,6 +90,19 @@ void onEvent(ev_t ev) {
   }
 }
 
+bool loraSend(uint8_t *msg) {
+  MessageBuffer_t sendBuffer;
+  sendBuffer.MessageSize = sizeof(msg) - 1;
+  memcpy(sendBuffer.Message, msg, sendBuffer.MessageSize);
+
+  if (xQueueSendToBack(loraSendQueue, (void *)&sendBuffer, (TickType_t)0) ==
+      pdTRUE) {
+    ESP_LOGI(TAG, "queue=loraSend action=add bytes=%d", sendBuffer.MessageSize);
+    return true;
+  }
+  return false;
+}
+
 void processSendBuffer() {
   // skip if LoRa is busy and don't get data from the queue
   if ((LMIC.opmode & (OP_JOINING | OP_REJOIN | OP_TXDATA | OP_POLL)) != 0) {

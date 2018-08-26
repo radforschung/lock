@@ -24,15 +24,7 @@ void setupLoRa() {
 
 void sendLockStatus(osjob_t *j) {
   uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02), 0x00};
-
-  MessageBuffer_t sendBuffer;
-  sendBuffer.MessageSize = sizeof(msg) - 1;
-  memcpy(sendBuffer.Message, msg, sendBuffer.MessageSize);
-
-  if (xQueueSendToBack(loraSendQueue, (void *)&sendBuffer, (TickType_t)0) ==
-      pdTRUE) {
-    ESP_LOGI(TAG, "queue=loraSend action=add bytes=%d", sendBuffer.MessageSize);
-  }
+  loraSend(msg);
 
   // Next TX is scheduled after TX_COMPLETE event.
   os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL),

@@ -19,6 +19,7 @@
 #include "config.h"
 
 extern QueueHandle_t loraSendQueue;
+extern QueueHandle_t taskQueue;
 
 // maximum number of messages in payload send queue
 #define LORA_SEND_QUEUE_SIZE 10
@@ -37,3 +38,4 @@ void os_getDevEui(u1_t *buf);
 void lorawan_loop(void *pvParameters);
 void lorawan_init(Preferences preferences);
 void processSendBuffer();
+bool loraSend(uint8_t *msg);
