@@ -27,8 +27,10 @@ void sendLockStatus(osjob_t *j) {
   loraSend(msg);
 
   // Next TX is scheduled after TX_COMPLETE event.
-  os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL),
-                      sendLockStatus);
+  ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL);
+  os_setTimedCallback(&sendjob, nextSendAt, FUNC_ADDR(sendLockStatus));
+  ESP_LOGI(TAG, "do=schedule job=sendjob callback=sendLockStatus at=%lu",
+           nextSendAt);
 }
 
 void setup() {
