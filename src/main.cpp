@@ -88,6 +88,8 @@ static void lockswitch_task(void *ignore) {
     vTaskDelay(100 / portTICK_PERIOD_MS);
     lastState = open;
 
+    // TODO This might be better suited within another task,
+    // the scheduler sometimes complains about exceeding watchdog limits
     if (open && !lock.motorIsParked()) {
       lock.open();
     }
