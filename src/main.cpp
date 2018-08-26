@@ -83,7 +83,7 @@ static void lockswitch_task(void *ignore) {
     bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
     if (lastState != open) {
       ESP_LOGI(tag, "Lock state changed: %d", open);
-      // os_setCallback(&sendLockStatusJob, sendLockStatus);
+      os_setCallback(&sendLockStatusJob, sendLockStatus);
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
     lastState = open;
