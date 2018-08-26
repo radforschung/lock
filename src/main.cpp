@@ -39,13 +39,14 @@ static char tag[] = "test_intr";
 static QueueHandle_t q1;
 
 static void handler(void *args) {
+  gpio_isr_handler_remove(PIN_LOCK_LATCH_SWITCH);
 	gpio_num_t gpio;
 	gpio = PIN_LOCK_LATCH_SWITCH;
 	xQueueSendToBackFromISR(q1, &gpio, NULL);
 }
 
-static void test1_task(void *ignore) {
-	ESP_LOGD(tag, ">> test1_task");
+static void lockswitch_task(void *ignore) {
+	ESP_LOGD(tag, ">> lockswitch_task");
 	gpio_num_t gpio;
 	q1 = xQueueCreate(10, sizeof(gpio_num_t));
 
@@ -59,14 +60,21 @@ static void test1_task(void *ignore) {
 
 	gpio_install_isr_service(0);
 	gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL	);
+
+  boolean lastState = false;
+
 	while(1) {
-		ESP_LOGD(tag, "Waiting on interrupt queue");
 		BaseType_t rc = xQueueReceive(q1, &gpio, portMAX_DELAY);
-		ESP_LOGD(tag, "Woke from interrupt queue wait: %d", rc);
+    bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
+    if (lastState != open) {
+      ESP_LOGI(tag, "Lock state changed: %d", open);
+    }
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    lastState = open;
+    gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL	);
 	}
 	vTaskDelete(NULL);
 }
-
 
 void setup() {
   Serial.begin(115200);
@@ -83,9 +91,11 @@ void setup() {
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
 
   preferences.end();
+
+  // Create Tasks for handling switch interrupts
   xTaskCreate(
-      test1_task,           /* Task function. */
-      "test1_task",        /* name of task. */
+      lockswitch_task,           /* Task function. */
+      "lockswitch_task",        /* name of task. */
       10000,                    /* Stack size of task */
       NULL,                     /* parameter of the task */
       1,                        /* priority of the task */
@@ -94,28 +104,9 @@ void setup() {
 }
 
 
-boolean lastState = false;
 
 void loop() {
   while (1) {
-    bool open = lock.isOpen();
-    // report change
-    if (lastState != open) {
-      ESP_LOGD(TAG, "change=true");
-      os_setCallback(&sendjob, sendLockStatus);
-      lastState = open;
-    }
-
-    if (!open) {
-      ESP_LOGD(TAG, "lock=closed");
-      // lock.open();
-    } else {
-      if (!lock.motorIsParked()) {
-        lock.open();
-      }
-      ESP_LOGD(TAG, "lock=open");
-    }
-
     int task;
     xQueueReceive(taskQueue, &task, 0);
     if (task) {
