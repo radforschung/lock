@@ -38,4 +38,4 @@ void os_getDevEui(u1_t *buf);
 void lorawan_loop(void *pvParameters);
 void lorawan_init(Preferences preferences);
 void processSendBuffer();
-bool loraSend(uint8_t *msg);
+bool loraSend(uint8_t *msg, uint8_t size);

@@ -10,10 +10,12 @@ const unsigned TX_INTERVAL = 60;
 
 Preferences preferences;
 Lock lock;
+Location location;
 
-static osjob_t sendjob;
+static osjob_t sendLockStatusJob;
+static osjob_t sendLocationWifiJob;
 QueueHandle_t taskQueue;
-QueueHandle_t loraSendQueue;
+QueueHandle_t loraSendQueue = NULL;
 
 void setupLoRa() {
   loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
@@ -28,11 +30,24 @@ void setupLoRa() {
 
 void sendLockStatus(osjob_t *j) {
   uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02), 0x00};
-  loraSend(msg);
+  loraSend(msg, sizeof(msg));
 
   // Next TX is scheduled after TX_COMPLETE event.
-  os_setTimedCallback(&sendjob, os_getTime() + sec2osticks(TX_INTERVAL),
-                      sendLockStatus);
+  ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL);
+  os_setTimedCallback(&sendLockStatusJob, nextSendAt,
+                      FUNC_ADDR(sendLockStatus));
+  ESP_LOGI(TAG,
+           "do=schedule job=sendLockStatusJob callback=sendLockStatus at=%lu",
+           nextSendAt);
+}
+
+void sendWifis(osjob_t *j) {
+  location.scanWifis();
+
+  ostime_t nextSendAt = os_getTime() + sec2osticks(45);
+  os_setTimedCallback(&sendLocationWifiJob, nextSendAt, FUNC_ADDR(sendWifis));
+  ESP_LOGI(TAG, "do=schedule job=sendLocationWifiJob callback=sendWifis at=%lu",
+           nextSendAt);
 }
 
 static char tag[] = "test_intr";
@@ -68,22 +83,33 @@ static void lockswitch_task(void *ignore) {
     bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
     if (lastState != open) {
       ESP_LOGI(tag, "Lock state changed: %d", open);
+      // os_setCallback(&sendLockStatusJob, sendLockStatus);
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
     lastState = open;
+
+    if (open && !lock.motorIsParked()) {
+      lock.open();
+    }
+
     gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL	);
 	}
 	vTaskDelete(NULL);
 }
 
+
 void setup() {
+  // disable brownout detection
+  (*((volatile uint32_t *)ETS_UNCACHED_ADDR((DR_REG_RTCCNTL_BASE + 0xd4)))) = 0;
+
   Serial.begin(115200);
   delay(1000);
   preferences.begin("lock32", false);
   lock = Lock();
+
   taskQueue = xQueueCreate(10, sizeof(int));
   if (taskQueue == NULL) {
-    ESP_LOGW(TAG, "msg=\"error creating task queue\"");
+    ESP_LOGE(TAG, "error=\"error creating task queue\"");
   }
 
   setupLoRa();
@@ -91,8 +117,7 @@ void setup() {
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
 
   preferences.end();
-
-  // Create Tasks for handling switch interrupts
+// Create Tasks for handling switch interrupts
   xTaskCreate(
       lockswitch_task,           /* Task function. */
       "lockswitch_task",        /* name of task. */
@@ -100,7 +125,6 @@ void setup() {
       NULL,                     /* parameter of the task */
       1,                        /* priority of the task */
       NULL);
-  os_setCallback(&sendjob, sendLockStatus);
 }
 
 
