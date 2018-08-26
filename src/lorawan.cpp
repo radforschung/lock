@@ -90,15 +90,15 @@ void onEvent(ev_t ev) {
   }
 }
 
-bool loraSend(uint8_t *msg) {
+bool loraSend(uint8_t *msg, uint8_t size) {
   if (loraSendQueue == NULL) {
     ESP_LOGE(TAG, "error=\"called loraSend before queue is initialized\"");
     return false;
   }
 
   MessageBuffer_t sendBuffer;
-  sendBuffer.MessageSize = sizeof(msg) - 1;
-  memcpy(sendBuffer.Message, msg, sendBuffer.MessageSize);
+  sendBuffer.MessageSize = size;
+  memcpy(sendBuffer.Message, msg, size);
 
   if (xQueueSendToBack(loraSendQueue, (void *)&sendBuffer, (TickType_t)0) ==
       pdTRUE) {
