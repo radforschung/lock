@@ -1,48 +1,54 @@
-#include "globals.h"
 #include <vector>
+#include "globals.h"
+
+static const char *TAG = "wifi";
+
+// wifis which contain this string did
+// opt out from location services
+static const String nomapSuffix = "_nomap";
+static const int maxSendWifis = 7;
 
 Location::Location() {
-	ESP_LOGD(TAG, "init location");
-	//Prepare Wifi
-	WiFi.mode(WIFI_STA);
-  	WiFi.disconnect();
+  ESP_LOGD(TAG, "init location");
+  // Prepare Wifi
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
 }
 
 void Location::scanWifis() {
-	String nomapString = "_nomap"; //Wifis which contain this string are opt outed of location services
-	int maxSendWifis = 7;
-	int networkCount = WiFi.scanNetworks();
-	ESP_LOGD(TAG, "scan wifis");
-	std::vector<uint8_t> message = { 0x02, 0x02 };
-	int sendWifiCount = 0;
-	for (int i = 0; (i < networkCount); ++i) {
-		String ssid = WiFi.SSID(i);
-		//ignore opt outed wifi networks
-		if (!strstr(ssid.c_str(), nomapString.c_str())) {
-			if (sendWifiCount >= maxSendWifis) {
-				break;
-			}
-			String bssid = WiFi.BSSIDstr(i);
-			ESP_LOGD(TAG, "wifibssid=%s", bssid.c_str());
-			ESP_LOGD(TAG, "wifisssid=%s", ssid.c_str());
-			ESP_LOGD(TAG, "wifirssi=%i", WiFi.RSSI(i));
-			uint8_t *network = WiFi.BSSID(i);
-			for (int j=0; j < 6; ++j) {
-				message.push_back(network[j]);
-			}
-			message.push_back(WiFi.RSSI(i)*-1);
-			sendWifiCount++;
-		}
-	}
-	String result = "";
-	char buff[16];
-	for (int j=0; j < message.size(); ++j) {
-		snprintf(buff, sizeof(buff), "%x", message.at(j));
-		result = result + " 0x" + buff;
-	}
+  int networkCount = WiFi.scanNetworks();
+  ESP_LOGD(TAG, "msg=\"scanned wifis\" count=%d", networkCount);
 
-	loraSend(message.data(), message.size());
+  std::vector<uint8_t> message = {0x02, 0x02};
+  int sendWifiCount = 0;
+  for (int i = 0; i < networkCount; ++i) {
+    String ssid = WiFi.SSID(i);
+    // ignore opt outed wifi networks
+    if (strstr(ssid.c_str(), nomapSuffix.c_str())) {
+      continue;
+    }
+    if (sendWifiCount >= maxSendWifis) {
+      break;
+    }
+    String bssid = WiFi.BSSIDstr(i);
+    int rssi = WiFi.RSSI(i);
+    ESP_LOGD(TAG, "wifibssid=%s wifisssid=%s wifirssi=%i", bssid.c_str(),
+             ssid.c_str(), rssi);
+    uint8_t *network = WiFi.BSSID(i);
+    for (int j = 0; j < 6; ++j) {
+      message.push_back(network[j]);
+    }
+    message.push_back(rssi * -1);
+    sendWifiCount++;
+  }
 
-	ESP_LOGD(TAG, "size=%i", message.size());
-	ESP_LOGD(TAG, "result=%s", result.c_str());
+  String result = "";
+  char buff[16];
+  for (int j = 0; j < message.size(); ++j) {
+    snprintf(buff, sizeof(buff), "%x", message.at(j));
+    result = result + " 0x" + buff;
+  }
+  ESP_LOGD(TAG, "size=%i result=%s", message.size(), result.c_str());
+
+  loraSend(message.data(), message.size());
 }

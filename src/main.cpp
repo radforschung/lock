@@ -34,28 +34,38 @@ void sendLockStatus(osjob_t *j) {
            nextSendAt);
 }
 
+void sendWifis(osjob_t *j) {
+  location.scanWifis();
+
+  ostime_t nextSendAt = os_getTime() + sec2osticks(45);
+  os_setTimedCallback(&sendjob, nextSendAt, FUNC_ADDR(sendWifis));
+  ESP_LOGI(TAG, "do=schedule job=sendjob callback=sendWifis at=%lu",
+           nextSendAt);
+}
+
 void setup() {
-  Serial.begin(115200);
-  //Magic TTGO Lora fix
+  // disable brownout detection
   (*((volatile uint32_t *)ETS_UNCACHED_ADDR((DR_REG_RTCCNTL_BASE + 0xd4)))) = 0;
+
+  Serial.begin(115200);
   delay(1000);
   preferences.begin("lock32", false);
   lock = Lock();
-  
+
   taskQueue = xQueueCreate(10, sizeof(int));
   if (taskQueue == NULL) {
-    ESP_LOGW(TAG, "msg=\"error creating task queue\"");
+    ESP_LOGE(TAG, "error=\"error creating task queue\"");
   }
 
   setupLoRa();
 
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
-  
+
   preferences.end();
   os_setCallback(&sendjob, FUNC_ADDR(sendLockStatus));
 
   location = Location();
-  location.scanWifis();
+  os_setCallback(&sendjob, FUNC_ADDR(sendWifis));
 }
 
 boolean lastState = false;
