@@ -15,6 +15,7 @@
 
 #include <hal/hal.h>
 #include "config.h"
+#include <Preferences.h>
 
 void onEvent(ev_t ev);
 void os_getDevKey(u1_t *buf);
