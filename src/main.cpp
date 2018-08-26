@@ -9,7 +9,7 @@ Lock lock;
 
 static osjob_t sendjob;
 QueueHandle_t taskQueue;
-QueueHandle_t loraSendQueue;
+QueueHandle_t loraSendQueue = NULL;
 
 void setupLoRa() {
   loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
@@ -46,7 +46,7 @@ void setup() {
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
 
   preferences.end();
-  os_setCallback(&sendjob, sendLockStatus);
+  os_setCallback(&sendjob, FUNC_ADDR(sendLockStatus));
 }
 
 boolean lastState = false;
