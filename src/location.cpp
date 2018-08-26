@@ -13,7 +13,7 @@ void Location::scanWifis() {
 	int maxSendWifis = 7;
 	int networkCount = WiFi.scanNetworks();
 	ESP_LOGD(TAG, "scan wifis");
-	std::vector<uint8_t> message = { 0x02, 0x01 };
+	std::vector<uint8_t> message = { 0x02, 0x02 };
 	int sendWifiCount = 0;
 	for (int i = 0; (i < networkCount); ++i) {
 		String ssid = WiFi.SSID(i);
