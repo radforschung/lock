@@ -34,10 +34,12 @@ void sendLockStatus(osjob_t *j) {
 
 void setup() {
   Serial.begin(115200);
+  //Magic TTGO Lora fix
+  (*((volatile uint32_t *)ETS_UNCACHED_ADDR((DR_REG_RTCCNTL_BASE + 0xd4)))) = 0;
   delay(1000);
   preferences.begin("lock32", false);
   lock = Lock();
-  location = Location();
+  
   taskQueue = xQueueCreate(10, sizeof(int));
   if (taskQueue == NULL) {
     ESP_LOGW(TAG, "msg=\"error creating task queue\"");
@@ -46,9 +48,12 @@ void setup() {
   setupLoRa();
 
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
-
+  
   preferences.end();
   os_setCallback(&sendjob, sendLockStatus);
+
+  location = Location();
+  location.scanWifis();
 }
 
 boolean lastState = false;
