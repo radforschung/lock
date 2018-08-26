@@ -1,5 +1,9 @@
 #include "globals.h"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/task.h>
+
 static const char *TAG = "main";
 
 const unsigned TX_INTERVAL = 60;
@@ -31,6 +35,39 @@ void sendLockStatus(osjob_t *j) {
                       sendLockStatus);
 }
 
+static char tag[] = "test_intr";
+static QueueHandle_t q1;
+
+static void handler(void *args) {
+	gpio_num_t gpio;
+	gpio = PIN_LOCK_LATCH_SWITCH;
+	xQueueSendToBackFromISR(q1, &gpio, NULL);
+}
+
+static void test1_task(void *ignore) {
+	ESP_LOGD(tag, ">> test1_task");
+	gpio_num_t gpio;
+	q1 = xQueueCreate(10, sizeof(gpio_num_t));
+
+	gpio_config_t gpioConfig;
+	gpioConfig.pin_bit_mask = GPIO_SEL_4;
+	gpioConfig.mode         = GPIO_MODE_INPUT;
+	gpioConfig.pull_up_en   = GPIO_PULLUP_ENABLE;
+	gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
+	gpioConfig.intr_type    = GPIO_INTR_ANYEDGE;
+	gpio_config(&gpioConfig);
+
+	gpio_install_isr_service(0);
+	gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL	);
+	while(1) {
+		ESP_LOGD(tag, "Waiting on interrupt queue");
+		BaseType_t rc = xQueueReceive(q1, &gpio, portMAX_DELAY);
+		ESP_LOGD(tag, "Woke from interrupt queue wait: %d", rc);
+	}
+	vTaskDelete(NULL);
+}
+
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -46,8 +83,16 @@ void setup() {
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
 
   preferences.end();
+  xTaskCreate(
+      test1_task,           /* Task function. */
+      "test1_task",        /* name of task. */
+      10000,                    /* Stack size of task */
+      NULL,                     /* parameter of the task */
+      1,                        /* priority of the task */
+      NULL);
   os_setCallback(&sendjob, sendLockStatus);
 }
+
 
 boolean lastState = false;
 
