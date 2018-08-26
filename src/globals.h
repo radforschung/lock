@@ -33,6 +33,7 @@
 
 #include "lock.h"
 #include "lorawan.h"
+#include "location.h"
 
 extern QueueHandle_t taskQueue;
 static const int TASK_UNLOCK = 1;
