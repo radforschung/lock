@@ -6,6 +6,7 @@ const unsigned TX_INTERVAL = 60;
 
 Preferences preferences;
 Lock lock;
+Location location;
 
 static osjob_t sendjob;
 QueueHandle_t taskQueue;
@@ -50,6 +51,7 @@ void setup() {
   delay(1000);
   preferences.begin("lock32", false);
   lock = Lock();
+  location = Location();
   taskQueue = xQueueCreate(10, sizeof(int));
   if (taskQueue == NULL) {
     ESP_LOGW(TAG, "msg=\"error creating task queue\"");
