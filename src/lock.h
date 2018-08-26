@@ -1,11 +1,11 @@
 class Lock {
-  public:
-	  Lock();
-    void open();
-    bool isOpen();
-    bool motorIsParked();
+public:
+  Lock();
+  void open();
+  bool isOpen();
+  bool motorIsParked();
 
-	private:
-    Bounce debounceRotationSwitch;
-    Bounce debounceLatchSwitch;
+private:
+  Bounce debounceRotationSwitch;
+  Bounce debounceLatchSwitch;
 };

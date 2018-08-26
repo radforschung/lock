@@ -1,18 +1,16 @@
 #include "globals.h"
 
-static const char* TAG = "lora";
+static const char *TAG = "lora";
 
-const lmic_pinmap lmic_pins = {
-  .nss = PIN_SPI_SS,
-  .rxtx = LMIC_UNUSED_PIN,
-  .rst = PIN_RST,
-  .dio = {PIN_DIO0, PIN_DIO1, PIN_DIO2}
-};
+const lmic_pinmap lmic_pins = {.nss = PIN_SPI_SS,
+                               .rxtx = LMIC_UNUSED_PIN,
+                               .rst = PIN_RST,
+                               .dio = {PIN_DIO0, PIN_DIO1, PIN_DIO2}};
 
 // they have to exist but do nothing:
-void os_getArtEui(u1_t* buf) {}
-void os_getDevEui(u1_t* buf) {}
-void os_getDevKey(u1_t* buf) {}
+void os_getArtEui(u1_t *buf) {}
+void os_getDevEui(u1_t *buf) {}
+void os_getDevKey(u1_t *buf) {}
 
 void lorawan_init(Preferences preferences) {
   // init spi before
@@ -39,7 +37,8 @@ void lorawan_init(Preferences preferences) {
   // TTN uses SF9 for its RX2 window.
   LMIC.dn2Dr = DR_SF9;
 
-  // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
+  // Set data rate and transmit power for uplink
+  // (note: txpow seems to be ignored by the library)
   LMIC_setDrTxpow(DR_SF9, 15);
 
   LMIC.seqnoUp = preferences.getUInt("counter", 1);
@@ -50,8 +49,9 @@ void lorawan_init(Preferences preferences) {
 void lorawan_loop(void *pvParameters) {
   configASSERT(((uint32_t)pvParameters) == 1); // FreeRTOS check
   while (1) {
-    os_runloop_once();                  // execute LMIC jobs
-    vTaskDelay(10 / portTICK_PERIOD_MS); // reset watchdog // CONFIG_FREERTOS_HZ=1000
+    os_runloop_once();
+    // reset watchdog # CONFIG_FREERTOS_HZ=1000
+    vTaskDelay(10 / portTICK_PERIOD_MS);
   }
 }
 
