@@ -90,19 +90,21 @@ void onEvent(ev_t ev) {
   }
 }
 
-bool loraSend(uint8_t *msg, uint8_t size) {
+bool loraSend(uint8_t port, uint8_t *msg, uint8_t size) {
   if (loraSendQueue == NULL) {
     ESP_LOGE(TAG, "error=\"called loraSend before queue is initialized\"");
     return false;
   }
 
   MessageBuffer_t sendBuffer;
-  sendBuffer.MessageSize = size;
-  memcpy(sendBuffer.Message, msg, size);
+  sendBuffer.size = size;
+  sendBuffer.port = port;
+  memcpy(sendBuffer.payload, msg, size);
 
   if (xQueueSendToBack(loraSendQueue, (void *)&sendBuffer, (TickType_t)0) ==
       pdTRUE) {
-    ESP_LOGI(TAG, "queue=loraSend action=add bytes=%d", sendBuffer.MessageSize);
+    ESP_LOGI(TAG, "queue=loraSend action=add port=%d bytes=%d", sendBuffer.port,
+             sendBuffer.size);
     return true;
   }
   return false;
@@ -120,10 +122,10 @@ void processSendBuffer() {
     // with the data to send from the queue
     Preferences pref;
     pref.begin("lock32", false);
-    LMIC_setTxData2(1, sendBuffer.Message, sendBuffer.MessageSize, 0);
+    LMIC_setTxData2(sendBuffer.port, sendBuffer.payload, sendBuffer.size, 0);
     pref.putUInt("counter", LMIC.seqnoUp);
-    ESP_LOGD(LORA_TAG, "msg=\"sending packet\" loraseq=%d bytes=%d",
-             LMIC.seqnoUp, sendBuffer.MessageSize);
+    ESP_LOGD(LORA_TAG, "msg=\"sending packet\" port=%d loraseq=%d bytes=%d",
+             sendBuffer.port, LMIC.seqnoUp, sendBuffer.size);
     pref.end();
   }
 }

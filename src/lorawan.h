@@ -26,9 +26,15 @@ extern QueueHandle_t taskQueue;
 // maximum size of payload block per transmit
 #define LORA_PAYLOAD_BUFFER_SIZE 51
 // Struct holding payload for data send queue
+
+#define LORA_PORT_LOCK_STATUS 1
+#define LORA_PORT_LOCATION_GPS 10
+#define LORA_PORT_LOCATION_WIFI 11
+
 typedef struct {
-  uint8_t MessageSize;
-  uint8_t Message[LORA_PAYLOAD_BUFFER_SIZE];
+  uint8_t size;
+  uint8_t port;
+  uint8_t payload[LORA_PAYLOAD_BUFFER_SIZE];
 } MessageBuffer_t;
 
 void onEvent(ev_t ev);
@@ -38,4 +44,4 @@ void os_getDevEui(u1_t *buf);
 void lorawan_loop(void *pvParameters);
 void lorawan_init(Preferences preferences);
 void processSendBuffer();
-bool loraSend(uint8_t *msg, uint8_t size);
+bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);

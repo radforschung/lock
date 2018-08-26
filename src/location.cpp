@@ -19,7 +19,7 @@ void Location::scanWifis() {
   int networkCount = WiFi.scanNetworks();
   ESP_LOGD(TAG, "msg=\"scanned wifis\" count=%d", networkCount);
 
-  std::vector<uint8_t> message = {0x02, 0x02};
+  std::vector<uint8_t> message = {0x02};
   int sendWifiCount = 0;
   for (int i = 0; i < networkCount; ++i) {
     String ssid = WiFi.SSID(i);
@@ -50,5 +50,5 @@ void Location::scanWifis() {
   }
   ESP_LOGD(TAG, "size=%i result=%s", message.size(), result.c_str());
 
-  loraSend(message.data(), message.size());
+  loraSend(LORA_PORT_LOCATION_WIFI, message.data(), message.size());
 }

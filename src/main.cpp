@@ -29,8 +29,8 @@ void setupLoRa() {
 }
 
 void sendLockStatus(osjob_t *j) {
-  uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02), 0x00};
-  loraSend(msg, sizeof(msg));
+  uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02)};
+  loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
 
   // Next TX is scheduled after TX_COMPLETE event.
   ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL);
