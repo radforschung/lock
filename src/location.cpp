@@ -40,9 +40,9 @@ void Location::scanWifis() {
 		snprintf(buff, sizeof(buff), "%x", message.at(j));
 		result = result + " 0x" + buff;
 	}
-	uint8_t msg[] = { 0x02, 0x03, 0x05, 0xFF };
-  	loraSend(msg);
-	//loraSend(message.data());
+	//uint8_t msg[] = { 0x02, 0x03, 0x05, 0xFF };
+  	//loraSend(msg);
+	loraSend(message.data());
 
 	ESP_LOGD(TAG, "size=%i", message.size());
 	ESP_LOGD(TAG, "result=%s", result.c_str());
