@@ -63,6 +63,7 @@ void setup() {
 boolean lastState = false;
 
 void loop() {
+  while(1) {
   bool open = lock.isOpen();
   // report change
   if (lastState != open) {
@@ -91,5 +92,6 @@ void loop() {
     }
   }
 
-  delay(1000);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  }
 }

@@ -24,6 +24,10 @@ void lorawan_init(Preferences preferences) {
   // reset LMIC MAC state
   LMIC_reset();
 
+  // This tells LMIC to make the receive windows bigger, in case your clock is
+  // 1% faster or slower.
+  LMIC_setClockError(MAX_CLOCK_ERROR * 1 / 100);
+
   // Set static session parameters.
   // copy for esp
   uint8_t appskey[sizeof(APPSKEY)];
@@ -32,26 +36,11 @@ void lorawan_init(Preferences preferences) {
   memcpy_P(nwkskey, NWKSKEY, sizeof(NWKSKEY));
   LMIC_setSession(0x1, DEVADDR, nwkskey, appskey);
 
-  // setup EU channels
-  LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-  LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);      // g-band
-  LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-  LMIC_setupChannel(3, 867100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-  LMIC_setupChannel(4, 867300000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-  LMIC_setupChannel(5, 867500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-  LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-  LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
-  LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK,  DR_FSK),  BAND_MILLI);      // g2-band
-
-  // Disable link check validation
-  LMIC_setLinkCheckMode(0);
-
   // TTN uses SF9 for its RX2 window.
   LMIC.dn2Dr = DR_SF9;
 
   // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
-  int txpower = 14;
-  LMIC_setDrTxpow(DR_SF12, txpower);
+  LMIC_setDrTxpow(DR_SF9, 15);
 
   LMIC.seqnoUp = preferences.getUInt("counter", 1);
   ESP_LOGD(TAG, "loraseq=%d", LMIC.seqnoUp);
@@ -62,11 +51,16 @@ void lorawan_loop(void *pvParameters) {
   configASSERT(((uint32_t)pvParameters) == 1); // FreeRTOS check
   while (1) {
     os_runloop_once();                  // execute LMIC jobs
-    vTaskDelay(1 / portTICK_PERIOD_MS); // reset watchdog
+    vTaskDelay(10 / portTICK_PERIOD_MS); // reset watchdog // CONFIG_FREERTOS_HZ=1000
   }
 }
 
 void onEvent(ev_t ev) {
+  if (ev == EV_JOINED) {
+    LMIC_setAdrMode(1);
+    LMIC_setLinkCheckMode(1);
+    LMIC_setDrTxpow(DR_SF9, 15);
+  }
   if (ev == EV_RXCOMPLETE) {
     // data received in ping slot
     ESP_LOGD(TAG, "loraEvent=EV_RXCOMPLETE");
