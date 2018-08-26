@@ -8,7 +8,8 @@ Preferences preferences;
 Lock lock;
 Location location;
 
-static osjob_t sendjob;
+static osjob_t sendLockStatusJob;
+static osjob_t sendLocationWifiJob;
 QueueHandle_t taskQueue;
 QueueHandle_t loraSendQueue = NULL;
 
@@ -29,8 +30,10 @@ void sendLockStatus(osjob_t *j) {
 
   // Next TX is scheduled after TX_COMPLETE event.
   ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL);
-  os_setTimedCallback(&sendjob, nextSendAt, FUNC_ADDR(sendLockStatus));
-  ESP_LOGI(TAG, "do=schedule job=sendjob callback=sendLockStatus at=%lu",
+  os_setTimedCallback(&sendLockStatusJob, nextSendAt,
+                      FUNC_ADDR(sendLockStatus));
+  ESP_LOGI(TAG,
+           "do=schedule job=sendLockStatusJob callback=sendLockStatus at=%lu",
            nextSendAt);
 }
 
@@ -38,8 +41,8 @@ void sendWifis(osjob_t *j) {
   location.scanWifis();
 
   ostime_t nextSendAt = os_getTime() + sec2osticks(45);
-  os_setTimedCallback(&sendjob, nextSendAt, FUNC_ADDR(sendWifis));
-  ESP_LOGI(TAG, "do=schedule job=sendjob callback=sendWifis at=%lu",
+  os_setTimedCallback(&sendLocationWifiJob, nextSendAt, FUNC_ADDR(sendWifis));
+  ESP_LOGI(TAG, "do=schedule job=sendLocationWifiJob callback=sendWifis at=%lu",
            nextSendAt);
 }
 
@@ -62,10 +65,10 @@ void setup() {
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
 
   preferences.end();
-  os_setCallback(&sendjob, FUNC_ADDR(sendLockStatus));
+  os_setCallback(&sendLockStatusJob, FUNC_ADDR(sendLockStatus));
 
   location = Location();
-  os_setCallback(&sendjob, FUNC_ADDR(sendWifis));
+  os_setCallback(&sendLocationWifiJob, FUNC_ADDR(sendWifis));
 }
 
 boolean lastState = false;
@@ -76,7 +79,7 @@ void loop() {
     // report change
     if (lastState != open) {
       ESP_LOGD(TAG, "change=true");
-      os_setCallback(&sendjob, sendLockStatus);
+      os_setCallback(&sendLockStatusJob, sendLockStatus);
       lastState = open;
     }
 
