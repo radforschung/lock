@@ -31,7 +31,7 @@ void Location::scanWifis() {
 			for (int j=0; j < 6; ++j) {
 				message.push_back(network[j]);
 			}
-			message.push_back(WiFi.RSSI(i));
+			message.push_back(WiFi.RSSI(i)*-1);
 			sendWifiCount++;
 		}
 	}
