@@ -1,5 +1,9 @@
 #include "globals.h"
 
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/task.h>
+
 static const char *TAG = "main";
 
 const unsigned TX_INTERVAL = 60;
@@ -46,6 +50,53 @@ void sendWifis(osjob_t *j) {
            nextSendAt);
 }
 
+static char tag[] = "test_intr";
+static QueueHandle_t q1;
+
+static void handler(void *args) {
+  gpio_isr_handler_remove(PIN_LOCK_LATCH_SWITCH);
+  gpio_num_t gpio;
+  gpio = PIN_LOCK_LATCH_SWITCH;
+  xQueueSendToBackFromISR(q1, &gpio, NULL);
+}
+
+static void lockswitch_task(void *ignore) {
+  ESP_LOGD(tag, ">> lockswitch_task");
+  gpio_num_t gpio;
+  q1 = xQueueCreate(10, sizeof(gpio_num_t));
+
+  gpio_config_t gpioConfig;
+  gpioConfig.pin_bit_mask = GPIO_SEL_4;
+  gpioConfig.mode = GPIO_MODE_INPUT;
+  gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
+  gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  gpioConfig.intr_type = GPIO_INTR_ANYEDGE;
+  gpio_config(&gpioConfig);
+
+  gpio_install_isr_service(0);
+  gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL);
+
+  boolean lastState = false;
+
+  while (1) {
+    BaseType_t rc = xQueueReceive(q1, &gpio, portMAX_DELAY);
+    bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
+    if (lastState != open) {
+      ESP_LOGI(tag, "Lock state changed: %d", open);
+      // os_setCallback(&sendLockStatusJob, sendLockStatus);
+    }
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    lastState = open;
+
+    if (open && !lock.motorIsParked()) {
+      lock.open();
+    }
+
+    gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL);
+  }
+  vTaskDelete(NULL);
+}
+
 void setup() {
   // disable brownout detection
   (*((volatile uint32_t *)ETS_UNCACHED_ADDR((DR_REG_RTCCNTL_BASE + 0xd4)))) = 0;
@@ -62,37 +113,25 @@ void setup() {
 
   setupLoRa();
 
-  ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.1");
+  ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.2");
 
   preferences.end();
+  // Create Tasks for handling switch interrupts
+  xTaskCreate(lockswitch_task,   /* Task function. */
+              "lockswitch_task", /* name of task. */
+              10000,             /* Stack size of task */
+              NULL,              /* parameter of the task */
+              1,                 /* priority of the task */
+              NULL);
+
   os_setCallback(&sendLockStatusJob, FUNC_ADDR(sendLockStatus));
 
   location = Location();
   os_setCallback(&sendLocationWifiJob, FUNC_ADDR(sendWifis));
 }
 
-boolean lastState = false;
-
 void loop() {
   while (1) {
-    bool open = lock.isOpen();
-    // report change
-    if (lastState != open) {
-      ESP_LOGD(TAG, "change=true");
-      os_setCallback(&sendLockStatusJob, sendLockStatus);
-      lastState = open;
-    }
-
-    if (!open) {
-      ESP_LOGD(TAG, "lock=closed");
-      // lock.open();
-    } else {
-      if (!lock.motorIsParked()) {
-        lock.open();
-      }
-      ESP_LOGD(TAG, "lock=open");
-    }
-
     int task;
     xQueueReceive(taskQueue, &task, 0);
     if (task) {
