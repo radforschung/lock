@@ -65,6 +65,8 @@ static void lockswitch_task(void *ignore) {
   gpio_num_t gpio;
   q1 = xQueueCreate(10, sizeof(gpio_num_t));
 
+  //TODO clean this up, mode etc is already set in lock.cpp
+  //     only thing to be done is to set INTR_ANYEDGE
   gpio_config_t gpioConfig;
   gpioConfig.pin_bit_mask = GPIO_SEL_4;
   gpioConfig.mode = GPIO_MODE_INPUT;

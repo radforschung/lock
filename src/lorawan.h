@@ -1,6 +1,9 @@
 // fdev_setup_stream doesn't exist on esp32:
 // https://github.com/espressif/arduino-esp32/issues/1123
 // workaround by voiding stuff, mapping lmic_printf to esp logging functions
+#ifndef _lock_lorawan_h
+#define _lock_lorawan_h
+
 #define _FDEV_SETUP_WRITE 0
 #define fdev_setup_stream(...) void(##__VA_ARGS__)
 
@@ -45,3 +48,5 @@ void lorawan_loop(void *pvParameters);
 void lorawan_init(Preferences preferences);
 void processSendBuffer();
 bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);
+
+#endif // _lock_lorawan_h

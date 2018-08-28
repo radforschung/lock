@@ -1,3 +1,5 @@
+#ifndef _lock_globals_h
+#define _lock_globals_h
 #include <Arduino.h>
 
 // overriding with our own, https://brandur.org/logfmt compatible log format:
@@ -37,3 +39,5 @@
 
 extern QueueHandle_t taskQueue;
 static const int TASK_UNLOCK = 1;
+
+#endif // _lock_globals_h
