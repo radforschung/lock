@@ -6,6 +6,8 @@
 // (rotation complete)
 #define PIN_LOCK_ROTATION_SWITCH GPIO_NUM_2
 
+#include <Bounce2.h>
+
 class Lock {
 public:
   Lock();

@@ -1,4 +1,5 @@
 #include "globals.h"
+#include "lock.h"
 
 static const char *TAG = "lock";
 

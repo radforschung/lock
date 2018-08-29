@@ -1,4 +1,5 @@
 #include "globals.h"
+#include "main.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>

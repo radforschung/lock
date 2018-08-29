@@ -9,16 +9,11 @@
       " file=%s line=%u method=%s " format ARDUHAL_LOG_RESET_COLOR "\r\n",     \
       hal_ticks(), pathToFileName(__FILE__), __LINE__, __FUNCTION__
 
-#include <Bounce2.h>
-#include <Preferences.h>
-
 // TODO this should be refactored to lock.h
 // latch switch: (PULLUP!) LOW: closed, HIGH: open
 #define PIN_LOCK_LATCH_SWITCH GPIO_NUM_4
 
-#include "lock.h"
 #include "lorawan.h"
-#include "location.h"
 
 extern QueueHandle_t taskQueue;
 static const int TASK_UNLOCK = 1;

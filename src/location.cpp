@@ -1,5 +1,6 @@
 #include <vector>
 #include "globals.h"
+#include "location.h"
 
 static const char *TAG = "wifi";
 
