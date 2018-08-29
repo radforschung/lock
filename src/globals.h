@@ -1,6 +1,5 @@
 #ifndef _lock_globals_h
 #define _lock_globals_h
-#include <Arduino.h>
 
 // overriding with our own, https://brandur.org/logfmt compatible log format:
 #undef ARDUHAL_LOG_FORMAT
