@@ -5,14 +5,6 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
-static const char *TAG = "main";
-
-const unsigned TX_INTERVAL = 60;
-
-Preferences preferences;
-Lock lock;
-Location location;
-
 static osjob_t sendLockStatusJob;
 static osjob_t sendLocationWifiJob;
 QueueHandle_t taskQueue;
