@@ -13,5 +13,4 @@ Preferences preferences;
 Lock lock = Lock();
 Location location = Location();
 
-
 #endif // _lock_main_h

@@ -61,5 +61,10 @@ void lorawan_loop(void *pvParameters);
 void lorawan_init(Preferences preferences);
 void processSendBuffer();
 bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);
+void setupLoRa();
+void sendLockStatus(osjob_t *j);
+void sendWifis(osjob_t *j);
+
+const unsigned TX_INTERVAL2 = 60;
 
 #endif // _lock_lorawan_h

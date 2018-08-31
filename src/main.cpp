@@ -10,38 +10,6 @@ static osjob_t sendLocationWifiJob;
 QueueHandle_t taskQueue;
 QueueHandle_t loraSendQueue = NULL;
 
-void setupLoRa() {
-  loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
-  if (loraSendQueue == 0) {
-    ESP_LOGE(TAG, "error=\"creation of lora send queue failed\"");
-  }
-  lorawan_init(preferences);
-  ESP_LOGI(TAG, "start=loratask");
-  xTaskCreatePinnedToCore(lorawan_loop, "loraloop", 2048, (void *)1,
-                          (5 | portPRIVILEGE_BIT), NULL, 1);
-}
-
-void sendLockStatus(osjob_t *j) {
-  uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02)};
-  loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
-
-  // Next TX is scheduled after TX_COMPLETE event.
-  ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL);
-  os_setTimedCallback(&sendLockStatusJob, nextSendAt,
-                      FUNC_ADDR(sendLockStatus));
-  ESP_LOGI(TAG,
-           "do=schedule job=sendLockStatusJob callback=sendLockStatus at=%lu",
-           nextSendAt);
-}
-
-void sendWifis(osjob_t *j) {
-  location.scanWifis();
-
-  ostime_t nextSendAt = os_getTime() + sec2osticks(45);
-  os_setTimedCallback(&sendLocationWifiJob, nextSendAt, FUNC_ADDR(sendWifis));
-  ESP_LOGI(TAG, "do=schedule job=sendLocationWifiJob callback=sendWifis at=%lu",
-           nextSendAt);
-}
 
 static char tag[] = "test_intr";
 static QueueHandle_t q1;
