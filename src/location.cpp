@@ -2,7 +2,7 @@
 #include "globals.h"
 #include "location.h"
 
-static const char *TAG = "wifi";
+static const char *TAG = "location";
 
 // wifis which contain this string did
 // opt out from location services

@@ -10,8 +10,6 @@ static osjob_t sendLocationWifiJob;
 QueueHandle_t taskQueue;
 QueueHandle_t loraSendQueue = NULL;
 
-
-static char tag[] = "test_intr";
 static QueueHandle_t q1;
 
 static void handler(void *args) {
@@ -22,7 +20,7 @@ static void handler(void *args) {
 }
 
 static void lockswitch_task(void *ignore) {
-  ESP_LOGD(tag, ">> lockswitch_task");
+  ESP_LOGD(TAG, ">> lockswitch_task");
   gpio_num_t gpio;
   q1 = xQueueCreate(10, sizeof(gpio_num_t));
 
@@ -45,7 +43,7 @@ static void lockswitch_task(void *ignore) {
     BaseType_t rc = xQueueReceive(q1, &gpio, portMAX_DELAY);
     bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
     if (lastState != open) {
-      ESP_LOGI(tag, "Lock state changed: %d", open);
+      ESP_LOGI(TAG, "Lock state changed: %d", open);
       os_setCallback(&sendLockStatusJob, sendLockStatus);
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);

@@ -1,6 +1,15 @@
+/**
+  ******************************************************************************
+  * @file    src/main.h
+  * @brief   Header for main.c module
+  ******************************************************************************
+  */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef _lock_main_h
 #define _lock_main_h
 
+/* Includes ------------------------------------------------------------------*/
 #include <Preferences.h>
 #include "lock.h"
 #include "location.h"

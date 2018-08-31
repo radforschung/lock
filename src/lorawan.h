@@ -1,9 +1,32 @@
-// fdev_setup_stream doesn't exist on esp32:
-// https://github.com/espressif/arduino-esp32/issues/1123
-// workaround by voiding stuff, mapping lmic_printf to esp logging functions
+/**
+  ******************************************************************************
+  * @file    src/lock.h
+  * @brief   Header for lock.c module
+  ******************************************************************************
+  */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef _lock_lorawan_h
 #define _lock_lorawan_h
 
+/* Includes ------------------------------------------------------------------*/
+#include <Preferences.h>
+#include <SPI.h>
+#include <lmic.h>
+
+#undef lmic_printf
+#define lmic_printf(f, ...) ESP_LOGV("lora", f, ##__VA_ARGS__)
+
+#include <hal/hal.h>
+#include "config.h"
+
+extern QueueHandle_t loraSendQueue;
+extern QueueHandle_t taskQueue;
+
+/* Exported macro ------------------------------------------------------------*/
+// fdev_setup_stream doesn't exist on esp32:
+// https://github.com/espressif/arduino-esp32/issues/1123
+// workaround by voiding stuff, mapping lmic_printf to esp logging functions
 #define _FDEV_SETUP_WRITE 0
 #define fdev_setup_stream(...) void(##__VA_ARGS__)
 
@@ -23,19 +46,6 @@
 // 32 HPDIO2 on pcb, needs to be wired external to GPIO32
 // (not necessary for LoRa, only FSK)
 #define PIN_DIO2 LMIC_UNUSED_PIN
-
-#include <Preferences.h>
-#include <SPI.h>
-#include <lmic.h>
-
-#undef lmic_printf
-#define lmic_printf(f, ...) ESP_LOGV("lora", f, ##__VA_ARGS__)
-
-#include <hal/hal.h>
-#include "config.h"
-
-extern QueueHandle_t loraSendQueue;
-extern QueueHandle_t taskQueue;
 
 // maximum number of messages in payload send queue
 #define LORA_SEND_QUEUE_SIZE 10

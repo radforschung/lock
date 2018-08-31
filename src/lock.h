@@ -1,13 +1,28 @@
+/**
+  ******************************************************************************
+  * @file    src/lock.h
+  * @brief   Header for lock.c module
+  ******************************************************************************
+  */
+
+/* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef _lock_lock_h
 #define _lock_lock_h
+
+/* Includes ------------------------------------------------------------------*/
+#include <Bounce2.h>
+
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
 
 #define PIN_LOCK_MOTOR GPIO_NUM_15
 // rotation switch: (PULLUP!) LOW: default, HIGH: motor presses against
 // (rotation complete)
 #define PIN_LOCK_ROTATION_SWITCH GPIO_NUM_2
 
-#include <Bounce2.h>
 
+/* Exported functions ------------------------------------------------------- */
 class Lock {
 public:
   Lock();
@@ -20,4 +35,5 @@ private:
   Bounce debounceLatchSwitch;
 };
 
+/* End of header guard ------------------------------------------------------ */
 #endif // _lock_lock_h
