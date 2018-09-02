@@ -1,9 +1,9 @@
 /**
-  ******************************************************************************
-  * @file    src/lock.h
-  * @brief   Header for lock.c module
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    src/lock.h
+ * @brief   Header for lock.c module
+ ******************************************************************************
+ */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef _lock_lorawan_h
@@ -30,6 +30,8 @@ extern QueueHandle_t taskQueue;
 #define _FDEV_SETUP_WRITE 0
 #define fdev_setup_stream(...) void(##__VA_ARGS__)
 
+#define PREFERENCES_KEY "lock32"
+
 #define CFG_eu868 1
 #define CFG_sx1276_radio 1
 #define LMIC_DEBUG_LEVEL 2
@@ -51,12 +53,12 @@ extern QueueHandle_t taskQueue;
 #define LORA_SEND_QUEUE_SIZE 10
 // maximum size of payload block per transmit
 #define LORA_PAYLOAD_BUFFER_SIZE 51
-// Struct holding payload for data send queue
 
 #define LORA_PORT_LOCK_STATUS 1
 #define LORA_PORT_LOCATION_GPS 10
 #define LORA_PORT_LOCATION_WIFI 11
 
+// Struct holding payload for data send queue
 typedef struct {
   uint8_t size;
   uint8_t port;
@@ -68,7 +70,7 @@ void os_getDevKey(u1_t *buf);
 void os_getArtEui(u1_t *buf);
 void os_getDevEui(u1_t *buf);
 void lorawan_loop(void *pvParameters);
-void lorawan_init(Preferences preferences);
+void lorawan_init(uint8_t sequenceNum);
 void processSendBuffer();
 bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);
 void setupLoRa();

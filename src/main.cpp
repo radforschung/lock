@@ -24,7 +24,7 @@ static void lockswitch_task(void *ignore) {
   gpio_num_t gpio;
   q1 = xQueueCreate(10, sizeof(gpio_num_t));
 
-  //TODO clean this up, mode etc is already set in lock.cpp
+  // TODO clean this up, mode etc is already set in lock.cpp
   //     only thing to be done is to set INTR_ANYEDGE
   gpio_config_t gpioConfig;
   gpioConfig.pin_bit_mask = GPIO_SEL_4;
@@ -66,7 +66,6 @@ void setup() {
 
   Serial.begin(115200);
   delay(1000);
-  preferences.begin("lock32", false);
   lock = Lock();
 
   taskQueue = xQueueCreate(10, sizeof(int));
@@ -78,7 +77,6 @@ void setup() {
 
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.2");
 
-  preferences.end();
   // Create Tasks for handling switch interrupts
   xTaskCreate(lockswitch_task,   /* Task function. */
               "lockswitch_task", /* name of task. */

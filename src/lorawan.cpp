@@ -1,6 +1,6 @@
 #include "globals.h"
-#include "lock.h"
 #include "location.h"
+#include "lock.h"
 
 extern Lock lock;
 extern Preferences preferences;
@@ -21,7 +21,7 @@ void os_getArtEui(u1_t *buf) {}
 void os_getDevEui(u1_t *buf) {}
 void os_getDevKey(u1_t *buf) {}
 
-void lorawan_init(Preferences preferences) {
+void lorawan_init(uint8_t sequenceNum) {
   // init spi before
   SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, 0x00);
 
@@ -50,7 +50,7 @@ void lorawan_init(Preferences preferences) {
   // (note: txpow seems to be ignored by the library)
   LMIC_setDrTxpow(DR_SF9, 15);
 
-  LMIC.seqnoUp = preferences.getUInt("counter", 1);
+  LMIC.seqnoUp = sequenceNum;
   ESP_LOGD(TAG, "loraseq=%d", LMIC.seqnoUp);
 }
 
@@ -130,7 +130,7 @@ void processSendBuffer() {
     // sendBuffer now contains the MessageBuffer
     // with the data to send from the queue
     Preferences pref;
-    pref.begin("lock32", false);
+    pref.begin(PREFERENCES_KEY, false);
     LMIC_setTxData2(sendBuffer.port, sendBuffer.payload, sendBuffer.size, 0);
     pref.putUInt("counter", LMIC.seqnoUp);
     ESP_LOGD(LORA_TAG, "msg=\"sending packet\" port=%d loraseq=%d bytes=%d",
@@ -144,7 +144,13 @@ void setupLoRa() {
   if (loraSendQueue == 0) {
     ESP_LOGE(TAG, "error=\"creation of lora send queue failed\"");
   }
-  lorawan_init(preferences);
+
+  Preferences pref;
+  pref.begin(PREFERENCES_KEY, false);
+  uint8_t sequenceNum = pref.getUInt("counter", 1);
+  lorawan_init(sequenceNum);
+  pref.end();
+
   ESP_LOGI(TAG, "start=loratask");
   xTaskCreatePinnedToCore(lorawan_loop, "loraloop", 2048, (void *)1,
                           (5 | portPRIVILEGE_BIT), NULL, 1);
