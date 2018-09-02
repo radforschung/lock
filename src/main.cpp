@@ -8,7 +8,6 @@
 static osjob_t sendLockStatusJob;
 static osjob_t sendLocationWifiJob;
 QueueHandle_t taskQueue;
-QueueHandle_t loraSendQueue = NULL;
 
 static QueueHandle_t q1;
 
@@ -104,6 +103,7 @@ void loop() {
     }
 
     processSendBuffer();
+    processLoraParse();
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }

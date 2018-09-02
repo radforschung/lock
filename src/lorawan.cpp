@@ -3,10 +3,12 @@
 #include "lock.h"
 
 extern Lock lock;
-extern Preferences preferences;
 extern Location location;
 
 static const char *TAG = "lora";
+
+QueueHandle_t loraSendQueue = NULL;
+QueueHandle_t loraParseQueue = NULL;
 
 static osjob_t sendLockStatusJob;
 static osjob_t sendLocationWifiJob;
@@ -91,10 +93,26 @@ void onEvent(ev_t ev) {
       }
       Serial.println();
 
-      // FIXME: throw data into a parsing event
-      if (LMIC.dataLen >= 2 && LMIC.frame[LMIC.dataBeg + 1] == 0x01) {
-        xQueueSend(taskQueue, &TASK_UNLOCK, portMAX_DELAY);
+      uint8_t port = 1;
+      if (LMIC.txrxFlags & TXRX_PORT) {
+        port = LMIC.frame[LMIC.dataBeg - 1];
       }
+
+      MessageBuffer_t recvBuffer;
+      recvBuffer.size = LMIC.dataLen;
+      recvBuffer.port = port;
+      memcpy(recvBuffer.payload, LMIC.frame + LMIC.dataBeg, LMIC.dataLen);
+
+      xQueueSendToBack(loraParseQueue, (void *)&recvBuffer, (TickType_t)0);
+    }
+  }
+}
+
+void processLoraParse() {
+  MessageBuffer_t recvBuffer;
+  if (xQueueReceive(loraParseQueue, &recvBuffer, (TickType_t)0) == pdTRUE) {
+    if (recvBuffer.size >= 2 && recvBuffer.payload[1] == 0x01) {
+      xQueueSend(taskQueue, &TASK_UNLOCK, portMAX_DELAY);
     }
   }
 }
@@ -143,6 +161,11 @@ void setupLoRa() {
   loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
   if (loraSendQueue == 0) {
     ESP_LOGE(TAG, "error=\"creation of lora send queue failed\"");
+  }
+
+  loraParseQueue = xQueueCreate(LORA_PARSE_QUEUE_SIZE, sizeof(MessageBuffer_t));
+  if (loraParseQueue == 0) {
+    ESP_LOGE(TAG, "error=\"creation of lora parse queue failed\"");
   }
 
   Preferences pref;
