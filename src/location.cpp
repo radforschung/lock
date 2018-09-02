@@ -1,4 +1,3 @@
-#include <vector>
 #include "globals.h"
 #include "location.h"
 

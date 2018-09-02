@@ -13,6 +13,7 @@
 #include <Preferences.h>
 #include <SPI.h>
 #include <lmic.h>
+#include <vector>
 
 #undef lmic_printf
 #define lmic_printf(f, ...) ESP_LOGV("lora", f, ##__VA_ARGS__)
