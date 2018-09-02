@@ -1,15 +1,13 @@
 #include "globals.h"
 #include "location.h"
 
-static const char *TAG = "location";
-
 // wifis which contain this string did
 // opt out from location services
 static const String nomapSuffix = "_nomap";
 static const int maxScanWifis = 7;
 
 Location::Location() {
-  ESP_LOGD(TAG, "init location");
+  log_d("init location");
   // Prepare Wifi
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
@@ -17,7 +15,7 @@ Location::Location() {
 
 std::vector<uint8_t> Location::scanWifis() {
   int networkCount = WiFi.scanNetworks();
-  ESP_LOGD(TAG, "msg=\"scanned wifis\" count=%d", networkCount);
+  log_d("msg=\"scanned wifis\" count=%d", networkCount);
 
   std::vector<uint8_t> message = {0x02};
   int scanWifiCount = 0;
@@ -32,8 +30,8 @@ std::vector<uint8_t> Location::scanWifis() {
     }
     String bssid = WiFi.BSSIDstr(i);
     int rssi = WiFi.RSSI(i);
-    ESP_LOGD(TAG, "wifibssid=%s wifisssid=%s wifirssi=%i", bssid.c_str(),
-             ssid.c_str(), rssi);
+    log_d("wifibssid=%s wifisssid=%s wifirssi=%i", bssid.c_str(),
+            ssid.c_str(), rssi);
     uint8_t *network = WiFi.BSSID(i);
     for (int j = 0; j < 6; ++j) {
       message.push_back(network[j]);
@@ -48,7 +46,7 @@ std::vector<uint8_t> Location::scanWifis() {
     snprintf(buff, sizeof(buff), "%x", message.at(j));
     result = result + " 0x" + buff;
   }
-  ESP_LOGD(TAG, "size=%i result=%s", message.size(), result.c_str());
+  log_d("size=%i result=%s", message.size(), result.c_str());
 
   return message;
 }

@@ -1,10 +1,6 @@
 #include "globals.h"
 #include "main.h"
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
-#include <freertos/task.h>
-
 QueueHandle_t taskQueue;
 
 static osjob_t periodicTask;
@@ -18,7 +14,7 @@ static void handler(void *args) {
 }
 
 static void lockswitch_task(void *ignore) {
-  ESP_LOGD(TAG, ">> lockswitch_task");
+  log_d(">> lockswitch_task");
   gpio_num_t gpio;
   q1 = xQueueCreate(10, sizeof(gpio_num_t));
 
@@ -38,10 +34,11 @@ static void lockswitch_task(void *ignore) {
   boolean lastState = false;
 
   while (1) {
-    BaseType_t rc = xQueueReceive(q1, &gpio, portMAX_DELAY);
+    xQueueReceive(q1, &gpio, portMAX_DELAY);
+
     bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
     if (lastState != open) {
-      ESP_LOGI(TAG, "Lock state changed: %d", open);
+      log_i("Lock state changed: %d", open);
       xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
       xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
     }
@@ -65,9 +62,8 @@ void periodicTaskSubmitter(osjob_t *j) {
 
   ostime_t nextAt = os_getTime() + sec2osticks(45);
   os_setTimedCallback(&periodicTask, nextAt, FUNC_ADDR(periodicTaskSubmitter));
-  ESP_LOGI(TAG,
-           "do=schedule job=periodicTask callback=periodicTaskSubmitter at=%lu",
-           nextAt);
+  log_i("do=schedule job=periodicTask callback=periodicTaskSubmitter at=%lu",
+          nextAt);
 }
 
 void setup() {
@@ -80,12 +76,12 @@ void setup() {
 
   taskQueue = xQueueCreate(10, sizeof(int));
   if (taskQueue == NULL) {
-    ESP_LOGE(TAG, "error=\"error creating task queue\"");
+    log_e("error=\"error creating task queue\"");
   }
 
   setupLoRa();
 
-  ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.2");
+  log_i("msg=\"hello world\" version=0.0.2");
 
   // Create Tasks for handling switch interrupts
   xTaskCreate(lockswitch_task,   /* Task function. */
@@ -112,23 +108,23 @@ void loop() {
     if (task) {
       switch (task) {
       case TASK_UNLOCK:
-        ESP_LOGD(TAG, "task=unlock");
+        log_d("task=unlock");
         lock.open();
         break;
       case TASK_RESTART:
-        ESP_LOGD(TAG, "task=restart");
+        log_d("task=restart");
         esp_restart();
         break;
       case TASK_SEND_LOCK_STATUS:
-        ESP_LOGD(TAG, "task=\"send lock status\"");
+        log_d("task=\"send lock status\"");
         sendLockStatus();
         break;
       case TASK_SEND_LOCATION_WIFI:
-        ESP_LOGD(TAG, "task=\"send location wifi\"");
+        log_d("task=\"send location wifi\"");
         sendWifis();
         break;
       default:
-        ESP_LOGW(TAG, "error=\"unknown task submitted\"");
+        log_w("error=\"unknown task submitted\"");
         break;
       }
       task = 0;

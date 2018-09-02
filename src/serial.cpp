@@ -1,6 +1,5 @@
 #include "globals.h"
-
-static const char *TAG = "serial";
+#include "serial.h"
 
 void processSerial() {
   while (Serial.available()) {
@@ -24,7 +23,7 @@ void processSerial() {
       xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
       break;
     default:
-      ESP_LOGW(TAG, "error=\"unknown serial command\"");
+      log_w("error=\"unknown serial command\"");
       break;
     }
   }

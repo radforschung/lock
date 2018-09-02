@@ -20,6 +20,7 @@
 
 #include <hal/hal.h>
 #include "config.h"
+#include "task.h"
 
 extern QueueHandle_t loraSendQueue;
 extern QueueHandle_t loraParseQueue;

@@ -14,8 +14,8 @@
 #include "lock.h"
 #include "lorawan.h"
 #include "serial.h"
+#include "task.h"
 
-static const char *TAG = "main";
 const unsigned TX_INTERVAL = 60;
 
 Lock lock = Lock();

@@ -1,8 +1,6 @@
 #include "globals.h"
 #include "lock.h"
 
-static const char *TAG = "lock";
-
 Lock::Lock() {
   debounceRotationSwitch = Bounce();
   debounceLatchSwitch = Bounce();
@@ -30,12 +28,12 @@ void Lock::open() {
 
 bool Lock::isOpen() {
   debounceLatchSwitch.update();
-  ESP_LOGD(TAG, "latchSwitch=%d", debounceLatchSwitch.read());
+  log_d("latchSwitch=%d", debounceLatchSwitch.read());
   return (debounceLatchSwitch.read() == HIGH);
 }
 
 bool Lock::motorIsParked() {
   debounceRotationSwitch.update();
-  ESP_LOGD(TAG, "rotationSwitch=%d", debounceRotationSwitch.read());
+  log_d("rotationSwitch=%d", debounceRotationSwitch.read());
   return debounceRotationSwitch.read() == HIGH;
 }
