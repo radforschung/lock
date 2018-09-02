@@ -182,7 +182,7 @@ void setupLoRa() {
 }
 
 void sendLockStatus() {
-  uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02)};
+  uint8_t msg[] = {0x01, (uint8_t)((!lock.isOpen()) ? 0x01 : 0x02)};
   loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
 }
 
