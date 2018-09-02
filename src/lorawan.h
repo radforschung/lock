@@ -24,7 +24,6 @@
 
 extern QueueHandle_t loraSendQueue;
 extern QueueHandle_t loraParseQueue;
-extern QueueHandle_t taskQueue;
 
 /* Exported macro ------------------------------------------------------------*/
 // fdev_setup_stream doesn't exist on esp32:
