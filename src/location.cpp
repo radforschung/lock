@@ -7,7 +7,7 @@ static const char *TAG = "location";
 // wifis which contain this string did
 // opt out from location services
 static const String nomapSuffix = "_nomap";
-static const int maxSendWifis = 7;
+static const int maxScanWifis = 7;
 
 Location::Location() {
   ESP_LOGD(TAG, "init location");
@@ -16,19 +16,19 @@ Location::Location() {
   WiFi.disconnect();
 }
 
-void Location::scanWifis() {
+std::vector<uint8_t> Location::scanWifis() {
   int networkCount = WiFi.scanNetworks();
   ESP_LOGD(TAG, "msg=\"scanned wifis\" count=%d", networkCount);
 
   std::vector<uint8_t> message = {0x02};
-  int sendWifiCount = 0;
+  int scanWifiCount = 0;
   for (int i = 0; i < networkCount; ++i) {
     String ssid = WiFi.SSID(i);
     // ignore opt outed wifi networks
     if (strstr(ssid.c_str(), nomapSuffix.c_str())) {
       continue;
     }
-    if (sendWifiCount >= maxSendWifis) {
+    if (scanWifiCount >= maxScanWifis) {
       break;
     }
     String bssid = WiFi.BSSIDstr(i);
@@ -40,7 +40,7 @@ void Location::scanWifis() {
       message.push_back(network[j]);
     }
     message.push_back(rssi * -1);
-    sendWifiCount++;
+    scanWifiCount++;
   }
 
   String result = "";
@@ -51,5 +51,5 @@ void Location::scanWifis() {
   }
   ESP_LOGD(TAG, "size=%i result=%s", message.size(), result.c_str());
 
-  loraSend(LORA_PORT_LOCATION_WIFI, message.data(), message.size());
+  return message;
 }

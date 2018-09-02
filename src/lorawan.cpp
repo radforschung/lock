@@ -1,3 +1,4 @@
+#include <vector>
 #include "globals.h"
 #include "location.h"
 #include "lock.h"
@@ -186,4 +187,7 @@ void sendLockStatus() {
   loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
 }
 
-void sendWifis() { location.scanWifis(); }
+void sendWifis() {
+  std::vector<uint8_t> message = location.scanWifis();
+  loraSend(LORA_PORT_LOCATION_WIFI, message.data(), message.size());
+}
