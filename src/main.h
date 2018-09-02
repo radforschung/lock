@@ -13,6 +13,7 @@
 #include "location.h"
 #include "lock.h"
 #include "lorawan.h"
+#include "serial.h"
 
 static const char *TAG = "main";
 const unsigned TX_INTERVAL = 60;

@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * @file    src/lock.h
- * @brief   Header for lock.c module
+ * @file    src/lorawan.h
+ * @brief   Header for lorawan.c module
  ******************************************************************************
  */
 
@@ -78,8 +78,8 @@ void processSendBuffer();
 void processLoraParse();
 bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);
 void setupLoRa();
-void sendLockStatus(osjob_t *j);
-void sendWifis(osjob_t *j);
+void sendLockStatus();
+void sendWifis();
 
 const unsigned TX_INTERVAL2 = 60;
 

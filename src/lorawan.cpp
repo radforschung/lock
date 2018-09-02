@@ -10,9 +10,6 @@ static const char *TAG = "lora";
 QueueHandle_t loraSendQueue = NULL;
 QueueHandle_t loraParseQueue = NULL;
 
-static osjob_t sendLockStatusJob;
-static osjob_t sendLocationWifiJob;
-
 const lmic_pinmap lmic_pins = {.nss = PIN_SPI_SS,
                                .rxtx = LMIC_UNUSED_PIN,
                                .rst = PIN_RST,
@@ -184,24 +181,9 @@ void setupLoRa() {
                           (5 | portPRIVILEGE_BIT), NULL, 1);
 }
 
-void sendLockStatus(osjob_t *j) {
+void sendLockStatus() {
   uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02)};
   loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
-
-  // Next TX is scheduled after TX_COMPLETE event.
-  ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL2);
-  os_setTimedCallback(&sendLockStatusJob, nextSendAt,
-                      FUNC_ADDR(sendLockStatus));
-  ESP_LOGI(TAG,
-           "do=schedule job=sendLockStatusJob callback=sendLockStatus at=%lu",
-           nextSendAt);
 }
 
-void sendWifis(osjob_t *j) {
-  location.scanWifis();
-
-  ostime_t nextSendAt = os_getTime() + sec2osticks(45);
-  os_setTimedCallback(&sendLocationWifiJob, nextSendAt, FUNC_ADDR(sendWifis));
-  ESP_LOGI(TAG, "do=schedule job=sendLocationWifiJob callback=sendWifis at=%lu",
-           nextSendAt);
-}
+void sendWifis() { location.scanWifis(); }
