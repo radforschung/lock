@@ -1,13 +1,10 @@
 #include <vector>
 #include "globals.h"
 #include "location.h"
+#include "WiFi.h"
+#include <TinyGPS++.h>
 
 static const char *TAG = "location";
-
-// wifis which contain this string did
-// opt out from location services
-static const String nomapSuffix = "_nomap";
-static const int maxSendWifis = 7;
 
 Location::Location() {
   ESP_LOGD(TAG, "init location");
@@ -52,4 +49,15 @@ void Location::scanWifis() {
   ESP_LOGD(TAG, "size=%i result=%s", message.size(), result.c_str());
 
   loraSend(LORA_PORT_LOCATION_WIFI, message.data(), message.size());
+}
+
+void gps_task(void *ignore) {
+  ESP_LOGD(TAG, ">> gps_task");
+  TinyGPSPlus gps;
+  HardwareSerial Serial1(1);
+  Serial1.begin(GPSBaud, SERIAL_8N1, GPSRX, GPSTX);
+  while(1) {
+
+  }
+  vTaskDelete(NULL);
 }

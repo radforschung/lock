@@ -84,6 +84,13 @@ void setup() {
               "lockswitch_task", /* name of task. */
               10000,             /* Stack size of task */
               NULL,              /* parameter of the task */
+              4,                 /* priority of the task */
+              NULL);
+  // Create Tasks for handling switch interrupts
+  xTaskCreate(gps_task,   /* Task function. */
+              "gps_task", /* name of task. */
+              10000,             /* Stack size of task */
+              NULL,              /* parameter of the task */
               1,                 /* priority of the task */
               NULL);
 
