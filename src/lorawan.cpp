@@ -113,6 +113,11 @@ void processLoraParse() {
   if (xQueueReceive(loraParseQueue, &recvBuffer, (TickType_t)0) == pdTRUE) {
     if (recvBuffer.size >= 2 && recvBuffer.payload[1] == 0x01) {
       xQueueSend(taskQueue, &TASK_UNLOCK, portMAX_DELAY);
+      return;
+    }
+    if (recvBuffer.size >= 2 && recvBuffer.payload[1] == 0x02) {
+      xQueueSend(taskQueue, &TASK_RESTART, portMAX_DELAY);
+      return;
     }
   }
 }

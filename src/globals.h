@@ -17,5 +17,6 @@
 
 extern QueueHandle_t taskQueue;
 static const int TASK_UNLOCK = 1;
+static const int TASK_RESTART = 2;
 
 #endif // _lock_globals_h

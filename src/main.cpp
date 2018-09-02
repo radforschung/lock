@@ -100,6 +100,10 @@ void loop() {
         lock.open();
         task = 0;
       }
+      if (task == TASK_RESTART) {
+        ESP_LOGD(TAG, "task=restart");
+        esp_restart();
+      }
     }
 
     processSendBuffer();
