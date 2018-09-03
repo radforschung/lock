@@ -65,7 +65,10 @@ void gps_task(void *ignore) {
 
     // Valid GPS location:
     if (gps.location.isValid() && gps.location.isUpdated()) {
-      ESP_LOGI(TAG, "GPS fix, Lat: %i, Lon: %i, Sats: %i", gps.location.lat(), gps.location.lng(), gps.satellites.value());
+      int32_t latitude = gps.location.lat() * 10000;
+      int32_t longitude = gps.location.lng() * 10000;
+
+      ESP_LOGI(TAG, "GPS fix, Lat: %ld, Lon: %lu, Sats: %d", latitude, longitude, gps.satellites.value());
     }
     // no valid GPS location:
     else {
