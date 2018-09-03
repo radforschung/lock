@@ -53,10 +53,33 @@ std::vector<uint8_t> Location::scanWifis() {
 void gps_task(void *ignore) {
   ESP_LOGD(TAG, ">> gps_task");
   TinyGPSPlus gps;
-  HardwareSerial Serial1(1);
-  Serial1.begin(GPSBaud, SERIAL_8N1, GPSRX, GPSTX);
+  HardwareSerial Serial2(1);
+  Serial2.begin(GPSBaud, SERIAL_8N1, GPSRX, GPSTX);
   while(1) {
+    long now = millis();
+    do {
+      while (Serial2.available()>0) {
+          gps.encode(Serial2.read());
+      }
+    } while ((millis() - now) < 3500);
 
+    // Valid GPS location:
+    if (gps.location.isValid() && gps.location.isUpdated()) {
+      ESP_LOGI(TAG, "GPS fix, Lat: %i, Lon: %i, Sats: %i", gps.location.lat(), gps.location.lng(), gps.satellites.value());
+    }
+    // no valid GPS location:
+    else {
+      ESP_LOGI(TAG, "No valid GPS location");
+    }
+
+    // on every loop:
+    if (gps.time.isValid() && gps.time.isUpdated()) {
+      ESP_LOGI(TAG, "GPS time: %d", gps.time.value());
+    }
+    ESP_LOGD(TAG, "GPS chars processed: %i, passed checksum: %i", gps.charsProcessed(), gps.passedChecksum());
+
+    // Go and lay dormant
+    vTaskDelay(25000 / portTICK_PERIOD_MS);
   }
   vTaskDelete(NULL);
 }

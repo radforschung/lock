@@ -23,7 +23,7 @@ static const int maxScanWifis = 7;
 
 static const int GPSRX = 15;
 static const int GPSTX = 12;
-static const uint32_t GPSBaud = 4800;
+static const uint32_t GPSBaud = 9600;
 
 
 /* Exported macro ------------------------------------------------------------*/
