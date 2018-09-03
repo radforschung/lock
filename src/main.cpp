@@ -5,11 +5,9 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 
-static osjob_t sendLockStatusJob;
-static osjob_t sendLocationWifiJob;
 QueueHandle_t taskQueue;
-QueueHandle_t loraSendQueue = NULL;
 
+static osjob_t periodicTask;
 static QueueHandle_t q1;
 
 static void handler(void *args) {
@@ -24,7 +22,7 @@ static void lockswitch_task(void *ignore) {
   gpio_num_t gpio;
   q1 = xQueueCreate(10, sizeof(gpio_num_t));
 
-  //TODO clean this up, mode etc is already set in lock.cpp
+  // TODO clean this up, mode etc is already set in lock.cpp
   //     only thing to be done is to set INTR_ANYEDGE
   gpio_config_t gpioConfig;
   gpioConfig.pin_bit_mask = GPIO_SEL_4;
@@ -44,7 +42,8 @@ static void lockswitch_task(void *ignore) {
     bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
     if (lastState != open) {
       ESP_LOGI(TAG, "Lock state changed: %d", open);
-      os_setCallback(&sendLockStatusJob, sendLockStatus);
+      xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
+      xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
     lastState = open;
@@ -60,13 +59,23 @@ static void lockswitch_task(void *ignore) {
   vTaskDelete(NULL);
 }
 
+void periodicTaskSubmitter(osjob_t *j) {
+  xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
+  xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
+
+  ostime_t nextAt = os_getTime() + sec2osticks(45);
+  os_setTimedCallback(&periodicTask, nextAt, FUNC_ADDR(periodicTaskSubmitter));
+  ESP_LOGI(TAG,
+           "do=schedule job=periodicTask callback=periodicTaskSubmitter at=%lu",
+           nextAt);
+}
+
 void setup() {
   // disable brownout detection
   (*((volatile uint32_t *)ETS_UNCACHED_ADDR((DR_REG_RTCCNTL_BASE + 0xd4)))) = 0;
 
   Serial.begin(115200);
   delay(1000);
-  preferences.begin("lock32", false);
   lock = Lock();
 
   taskQueue = xQueueCreate(10, sizeof(int));
@@ -78,7 +87,6 @@ void setup() {
 
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.2");
 
-  preferences.end();
   // Create Tasks for handling switch interrupts
   xTaskCreate(lockswitch_task,   /* Task function. */
               "lockswitch_task", /* name of task. */
@@ -94,10 +102,14 @@ void setup() {
               1,                 /* priority of the task */
               NULL);
 
-  os_setCallback(&sendLockStatusJob, FUNC_ADDR(sendLockStatus));
+  xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
 
   location = Location();
-  os_setCallback(&sendLocationWifiJob, FUNC_ADDR(sendWifis));
+  xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
+
+  // TODO: remove periodicTask. currently only there for debugging
+  ostime_t nextAt = os_getTime() + sec2osticks(45);
+  os_setTimedCallback(&periodicTask, nextAt, FUNC_ADDR(periodicTaskSubmitter));
 }
 
 void loop() {
@@ -105,14 +117,33 @@ void loop() {
     int task;
     xQueueReceive(taskQueue, &task, 0);
     if (task) {
-      if (task == TASK_UNLOCK) {
+      switch (task) {
+      case TASK_UNLOCK:
         ESP_LOGD(TAG, "task=unlock");
         lock.open();
-        task = 0;
+        break;
+      case TASK_RESTART:
+        ESP_LOGD(TAG, "task=restart");
+        esp_restart();
+        break;
+      case TASK_SEND_LOCK_STATUS:
+        ESP_LOGD(TAG, "task=\"send lock status\"");
+        sendLockStatus();
+        break;
+      case TASK_SEND_LOCATION_WIFI:
+        ESP_LOGD(TAG, "task=\"send location wifi\"");
+        sendWifis();
+        break;
+      default:
+        ESP_LOGW(TAG, "error=\"unknown task submitted\"");
+        break;
       }
+      task = 0;
     }
 
     processSendBuffer();
+    processLoraParse();
+    processSerial();
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }

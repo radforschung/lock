@@ -1,15 +1,14 @@
 #include "globals.h"
-#include "lock.h"
 #include "location.h"
+#include "lock.h"
 
 extern Lock lock;
-extern Preferences preferences;
 extern Location location;
 
 static const char *TAG = "lora";
 
-static osjob_t sendLockStatusJob;
-static osjob_t sendLocationWifiJob;
+QueueHandle_t loraSendQueue = NULL;
+QueueHandle_t loraParseQueue = NULL;
 
 const lmic_pinmap lmic_pins = {.nss = PIN_SPI_SS,
                                .rxtx = LMIC_UNUSED_PIN,
@@ -21,7 +20,7 @@ void os_getArtEui(u1_t *buf) {}
 void os_getDevEui(u1_t *buf) {}
 void os_getDevKey(u1_t *buf) {}
 
-void lorawan_init(Preferences preferences) {
+void lorawan_init(uint8_t sequenceNum) {
   // init spi before
   SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, 0x00);
 
@@ -50,7 +49,7 @@ void lorawan_init(Preferences preferences) {
   // (note: txpow seems to be ignored by the library)
   LMIC_setDrTxpow(DR_SF9, 15);
 
-  LMIC.seqnoUp = preferences.getUInt("counter", 1);
+  LMIC.seqnoUp = sequenceNum;
   ESP_LOGD(TAG, "loraseq=%d", LMIC.seqnoUp);
 }
 
@@ -91,10 +90,31 @@ void onEvent(ev_t ev) {
       }
       Serial.println();
 
-      // FIXME: throw data into a parsing event
-      if (LMIC.dataLen >= 2 && LMIC.frame[LMIC.dataBeg + 1] == 0x01) {
-        xQueueSend(taskQueue, &TASK_UNLOCK, portMAX_DELAY);
+      uint8_t port = 1;
+      if (LMIC.txrxFlags & TXRX_PORT) {
+        port = LMIC.frame[LMIC.dataBeg - 1];
       }
+
+      MessageBuffer_t recvBuffer;
+      recvBuffer.size = LMIC.dataLen;
+      recvBuffer.port = port;
+      memcpy(recvBuffer.payload, LMIC.frame + LMIC.dataBeg, LMIC.dataLen);
+
+      xQueueSendToBack(loraParseQueue, (void *)&recvBuffer, (TickType_t)0);
+    }
+  }
+}
+
+void processLoraParse() {
+  MessageBuffer_t recvBuffer;
+  if (xQueueReceive(loraParseQueue, &recvBuffer, (TickType_t)0) == pdTRUE) {
+    if (recvBuffer.size >= 2 && recvBuffer.payload[1] == 0x01) {
+      xQueueSend(taskQueue, &TASK_UNLOCK, portMAX_DELAY);
+      return;
+    }
+    if (recvBuffer.size >= 2 && recvBuffer.payload[1] == 0x02) {
+      xQueueSend(taskQueue, &TASK_RESTART, portMAX_DELAY);
+      return;
     }
   }
 }
@@ -130,7 +150,7 @@ void processSendBuffer() {
     // sendBuffer now contains the MessageBuffer
     // with the data to send from the queue
     Preferences pref;
-    pref.begin("lock32", false);
+    pref.begin(PREFERENCES_KEY, false);
     LMIC_setTxData2(sendBuffer.port, sendBuffer.payload, sendBuffer.size, 0);
     pref.putUInt("counter", LMIC.seqnoUp);
     ESP_LOGD(LORA_TAG, "msg=\"sending packet\" port=%d loraseq=%d bytes=%d",
@@ -144,30 +164,29 @@ void setupLoRa() {
   if (loraSendQueue == 0) {
     ESP_LOGE(TAG, "error=\"creation of lora send queue failed\"");
   }
-  lorawan_init(preferences);
+
+  loraParseQueue = xQueueCreate(LORA_PARSE_QUEUE_SIZE, sizeof(MessageBuffer_t));
+  if (loraParseQueue == 0) {
+    ESP_LOGE(TAG, "error=\"creation of lora parse queue failed\"");
+  }
+
+  Preferences pref;
+  pref.begin(PREFERENCES_KEY, false);
+  uint8_t sequenceNum = pref.getUInt("counter", 1);
+  lorawan_init(sequenceNum);
+  pref.end();
+
   ESP_LOGI(TAG, "start=loratask");
   xTaskCreatePinnedToCore(lorawan_loop, "loraloop", 2048, (void *)1,
                           (5 | portPRIVILEGE_BIT), NULL, 1);
 }
 
-void sendLockStatus(osjob_t *j) {
-  uint8_t msg[] = {0x01, ((!lock.isOpen()) ? 0x01 : 0x02)};
+void sendLockStatus() {
+  uint8_t msg[] = {0x01, (uint8_t)((!lock.isOpen()) ? 0x01 : 0x02)};
   loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
-
-  // Next TX is scheduled after TX_COMPLETE event.
-  ostime_t nextSendAt = os_getTime() + sec2osticks(TX_INTERVAL2);
-  os_setTimedCallback(&sendLockStatusJob, nextSendAt,
-                      FUNC_ADDR(sendLockStatus));
-  ESP_LOGI(TAG,
-           "do=schedule job=sendLockStatusJob callback=sendLockStatus at=%lu",
-           nextSendAt);
 }
 
-void sendWifis(osjob_t *j) {
-  location.scanWifis();
-
-  ostime_t nextSendAt = os_getTime() + sec2osticks(45);
-  os_setTimedCallback(&sendLocationWifiJob, nextSendAt, FUNC_ADDR(sendWifis));
-  ESP_LOGI(TAG, "do=schedule job=sendLocationWifiJob callback=sendWifis at=%lu",
-           nextSendAt);
+void sendWifis() {
+  std::vector<uint8_t> message = location.scanWifis();
+  loraSend(LORA_PORT_LOCATION_WIFI, message.data(), message.size());
 }
