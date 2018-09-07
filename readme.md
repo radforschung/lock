@@ -8,7 +8,7 @@ This is a work in progress. For more background see https://radforschung.org/log
 
 ## hardware prototype
 
-for the prototype we're using a modified smart lock from china. as platform for the esp32 and lora a ttgo lora v2 is used.
+for the prototype we're using a modified smart lock from china. as platform for the esp32 and lora a ttgo lora v2 is used. The e-paper module is from waveshare, the 1.54 inch black/white edition.
 ![](hardware/prototype-ttgo-v2.svg)
 
 ## LoRaWAN
