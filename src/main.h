@@ -10,6 +10,7 @@
 #define _lock_main_h
 
 /* Includes ------------------------------------------------------------------*/
+#include "epaper.h"
 #include "location.h"
 #include "lock.h"
 #include "lorawan.h"

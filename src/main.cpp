@@ -83,9 +83,14 @@ void setup() {
     ESP_LOGE(TAG, "error=\"error creating task queue\"");
   }
 
-  setupLoRa();
-
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.2");
+
+  // init spi before
+  pinMode(PIN_SPI_MOSI, OUTPUT);
+  SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, 0x00);
+
+  setupLoRa();
+  setupEpaper();
 
   // Create Tasks for handling switch interrupts
   xTaskCreate(lockswitch_task,   /* Task function. */
