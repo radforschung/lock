@@ -28,8 +28,8 @@
 #ifndef EPDIF_H
 #define EPDIF_H
 
+#include <Arduino.h>
 #include <SPI.h>
-#include <arduino.h>
 
 struct epd_pinmap {
   uint8_t cs;
