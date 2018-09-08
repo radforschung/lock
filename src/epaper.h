@@ -12,7 +12,9 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include <epd1in54.h>
+#include <epdpaint.h>
 #include <pgmspace.h>
+#include <qrcode.h>
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -439,6 +441,8 @@ const unsigned char LOGO_IMAGE_DATA[] PROGMEM = {
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 void setupEpaper();
+void wakeEpaper();
+void renderQR(char *text);
 
 /* End of header guard ------------------------------------------------------ */
 #endif // _lock_epaper_h
