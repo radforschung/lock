@@ -2,7 +2,7 @@
 
 #include "epaper.h"
 
-const epd_pinmap epd_pins = {.cs = 14, .dc = 25, .rst = 12, .busy = 0};
+const epd_pinmap epd_pins = {.cs = 14, .dc = 25, .rst = 18, .busy = 0};
 
 #define COLORED 0
 #define UNCOLORED 1
