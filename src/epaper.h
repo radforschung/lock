@@ -16,6 +16,8 @@
 #include <pgmspace.h>
 #include <qrcode.h>
 
+#include <lvgl.h>
+
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 
