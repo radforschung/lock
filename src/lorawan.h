@@ -15,8 +15,10 @@
 #include <lmic.h>
 #include <vector>
 
+#ifdef lmic_printf
 #undef lmic_printf
 #define lmic_printf(f, ...) ESP_LOGV("lora", f, ##__VA_ARGS__)
+#endif
 
 #include <hal/hal.h>
 #include "config.h"
@@ -30,13 +32,21 @@ extern QueueHandle_t taskQueue;
 // https://github.com/espressif/arduino-esp32/issues/1123
 // workaround by voiding stuff, mapping lmic_printf to esp logging functions
 #define _FDEV_SETUP_WRITE 0
+
+#ifdef fdev_setup_stream
+#undef fdev_setup_stream
 #define fdev_setup_stream(...) void(##__VA_ARGS__)
+#endif
 
 #define PREFERENCES_KEY "lock32"
 
 #define CFG_eu868 1
 #define CFG_sx1276_radio 1
+
+#ifdef LMIC_DEBUG_LEVEL
+#undef LMIC_DEBUG_LEVEL
 #define LMIC_DEBUG_LEVEL 2
+#endif
 
 #define PIN_SPI_SS GPIO_NUM_18   // HPD13A NSS/SEL (Pin4) SPI Chip Select Input
 #define PIN_SPI_MOSI GPIO_NUM_27 // HPD13A MOSI/DSI (Pin6) SPI Data Input

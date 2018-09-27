@@ -1,12 +1,9 @@
 #include "globals.h"
 #include "location.h"
+#include "WiFi.h"
+#include <TinyGPS++.h>
 
 static const char *TAG = "location";
-
-// wifis which contain this string did
-// opt out from location services
-static const String nomapSuffix = "_nomap";
-static const int maxScanWifis = 7;
 
 Location::Location() {
   ESP_LOGD(TAG, "init location");
@@ -51,4 +48,41 @@ std::vector<uint8_t> Location::scanWifis() {
   ESP_LOGD(TAG, "size=%i result=%s", message.size(), result.c_str());
 
   return message;
+}
+
+void gps_task(void *ignore) {
+  ESP_LOGD(TAG, ">> gps_task");
+  TinyGPSPlus gps;
+  HardwareSerial Serial2(1);
+  Serial2.begin(GPSBaud, SERIAL_8N1, GPSRX, GPSTX);
+  while(1) {
+    long now = millis();
+    do {
+      while (Serial2.available()>0) {
+          gps.encode(Serial2.read());
+      }
+    } while ((millis() - now) < 3500);
+
+    // Valid GPS location:
+    if (gps.location.isValid() && gps.location.isUpdated()) {
+      int32_t latitude = gps.location.lat() * 10000;
+      int32_t longitude = gps.location.lng() * 10000;
+
+      ESP_LOGI(TAG, "GPS fix, Lat: %ld, Lon: %lu, Sats: %d", latitude, longitude, gps.satellites.value());
+    }
+    // no valid GPS location:
+    else {
+      ESP_LOGI(TAG, "No valid GPS location");
+    }
+
+    // on every loop:
+    if (gps.time.isValid() && gps.time.isUpdated()) {
+      ESP_LOGI(TAG, "GPS time: %d", gps.time.value());
+    }
+    ESP_LOGD(TAG, "GPS chars processed: %i, passed checksum: %i", gps.charsProcessed(), gps.passedChecksum());
+
+    // Go and lay dormant
+    vTaskDelay(25000 / portTICK_PERIOD_MS);
+  }
+  vTaskDelete(NULL);
 }
