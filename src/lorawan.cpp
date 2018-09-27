@@ -21,9 +21,6 @@ void os_getDevEui(u1_t *buf) {}
 void os_getDevKey(u1_t *buf) {}
 
 void lorawan_init(uint8_t sequenceNum) {
-  // init spi before
-  SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, 0x00);
-
   // initialize LoRaWAN LMIC run-time environment
   os_init();
 
