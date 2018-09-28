@@ -1,3 +1,4 @@
+#define SPI_HAS_TRANSACTION 1
 #include <Adafruit_PN532.h>
 
 #define PN532_SCK  (5)
