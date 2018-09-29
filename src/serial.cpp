@@ -3,6 +3,8 @@
 static const char *TAG = "serial";
 
 void processSerial() {
+  void *nothing;
+
   while (Serial.available()) {
     char inChar = (char)Serial.read();
     switch (inChar) {
@@ -21,7 +23,10 @@ void processSerial() {
       xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
       break;
     case 'w':
-      xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
+      xQueueSend(wifiQueue, &nothing, portMAX_DELAY);
+      break;
+    case 'g':
+      xQueueSend(gpsQueue, &nothing, portMAX_DELAY);
       break;
     default:
       ESP_LOGW(TAG, "error=\"unknown serial command\"");

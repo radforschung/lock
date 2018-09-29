@@ -20,6 +20,5 @@ static const char *TAG = "main";
 const unsigned TX_INTERVAL = 60;
 
 Lock lock = Lock();
-Location location = Location();
 
 #endif // _lock_main_h

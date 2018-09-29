@@ -62,8 +62,9 @@ static void lockswitch_task(void *ignore) {
 void periodicTaskSubmitter(osjob_t *j) {
   xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
   xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
+  xQueueSend(taskQueue, &TASK_SEND_LOCATION_GPS, portMAX_DELAY);
 
-  ostime_t nextAt = os_getTime() + sec2osticks(45);
+  ostime_t nextAt = os_getTime() + sec2osticks(60 * 5);
   os_setTimedCallback(&periodicTask, nextAt, FUNC_ADDR(periodicTaskSubmitter));
   ESP_LOGI(TAG,
            "do=schedule job=periodicTask callback=periodicTaskSubmitter at=%lu",
@@ -83,6 +84,16 @@ void setup() {
     ESP_LOGE(TAG, "error=\"error creating task queue\"");
   }
 
+  gpsQueue = xQueueCreate(3, 1);
+  if (gpsQueue == NULL) {
+    ESP_LOGE(TAG, "error=\"error creating gps queue\"");
+  }
+
+  wifiQueue = xQueueCreate(3, 1);
+  if (wifiQueue == NULL) {
+    ESP_LOGE(TAG, "error=\"error creating wifi queue\"");
+  }
+
   ESP_LOGI(TAG, "msg=\"hello world\" version=0.0.2");
 
   // init spi before
@@ -92,32 +103,38 @@ void setup() {
   setupLoRa();
   setupEpaper();
 
-  // Create Tasks for handling switch interrupts
-  xTaskCreate(lockswitch_task,   /* Task function. */
-              "lockswitch_task", /* name of task. */
-              10000,             /* Stack size of task */
-              NULL,              /* parameter of the task */
-              4,                 /* priority of the task */
+  // Create Task for handling switch interrupts
+  xTaskCreate(lockswitch_task,   // Task function.
+              "lockswitch_task", // name of task.
+              10000,             // Stack size of task
+              NULL,              // parameter of the task
+              4,                 // priority of the task
               NULL);
-  // Create Tasks for handling switch interrupts
-  xTaskCreate(gps_task,   /* Task function. */
-              "gps_task", /* name of task. */
-              10000,             /* Stack size of task */
-              NULL,              /* parameter of the task */
-              1,                 /* priority of the task */
+  xTaskCreate(wifi_task,   // Task function.
+              "wifi_task", // name of task.
+              10000,       // Stack size of task
+              NULL,        // parameter of the task
+              1,           // priority of the task
+              NULL);
+  xTaskCreate(gps_task,   // Task function.
+              "gps_task", // name of task.
+              10000,      // Stack size of task
+              NULL,       // parameter of the task
+              1,          // priority of the task
               NULL);
 
   xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
 
-  location = Location();
   xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
+  xQueueSend(taskQueue, &TASK_SEND_LOCATION_GPS, portMAX_DELAY);
 
   // TODO: remove periodicTask. currently only there for debugging
-  ostime_t nextAt = os_getTime() + sec2osticks(45);
+  ostime_t nextAt = os_getTime() + sec2osticks(5 * 60);
   os_setTimedCallback(&periodicTask, nextAt, FUNC_ADDR(periodicTaskSubmitter));
 }
 
 void loop() {
+  void *nothing;
   while (1) {
     int task;
     xQueueReceive(taskQueue, &task, 0);
@@ -137,7 +154,11 @@ void loop() {
         break;
       case TASK_SEND_LOCATION_WIFI:
         ESP_LOGD(TAG, "task=\"send location wifi\"");
-        sendWifis();
+        xQueueSend(wifiQueue, &nothing, portMAX_DELAY);
+        break;
+      case TASK_SEND_LOCATION_GPS:
+        ESP_LOGD(TAG, "task=\"send location gps\"");
+        xQueueSend(gpsQueue, &nothing, portMAX_DELAY);
         break;
       default:
         ESP_LOGW(TAG, "error=\"unknown task submitted\"");

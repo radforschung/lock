@@ -1,9 +1,7 @@
 #include "globals.h"
-#include "location.h"
 #include "lock.h"
 
 extern Lock lock;
-extern Location location;
 
 static const char *TAG = "lora";
 
@@ -181,9 +179,4 @@ void setupLoRa() {
 void sendLockStatus() {
   uint8_t msg[] = {0x01, (uint8_t)((!lock.isOpen()) ? 0x01 : 0x02)};
   loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
-}
-
-void sendWifis() {
-  std::vector<uint8_t> message = location.scanWifis();
-  loraSend(LORA_PORT_LOCATION_WIFI, message.data(), message.size());
 }

@@ -90,7 +90,6 @@ void processLoraParse();
 bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);
 void setupLoRa();
 void sendLockStatus();
-void sendWifis();
 
 const unsigned TX_INTERVAL2 = 60;
 
