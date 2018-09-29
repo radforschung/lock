@@ -95,7 +95,10 @@ void Epd::SendData(unsigned char data) {
  *  @brief: Wait until the busy_pin goes LOW
  */
 void Epd::WaitUntilIdle(void) {
-  while (DigitalRead(busy_pin) == HIGH) { // LOW: idle, HIGH: busy
+  static int timeout = 5000;
+  long now = millis();
+  while ((millis() - now) < timeout &&
+         DigitalRead(busy_pin) == HIGH) { // LOW: idle, HIGH: busy
     DelayMs(100);
   }
 }
