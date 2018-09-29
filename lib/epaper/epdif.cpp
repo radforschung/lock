@@ -38,11 +38,11 @@ int EpdIf::DigitalRead(int pin) { return digitalRead(pin); }
 void EpdIf::DelayMs(unsigned int delaytime) { delay(delaytime); }
 
 void EpdIf::SpiTransfer(unsigned char data) {
-  digitalWrite(epd_pins.cs, LOW);
   SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
+  digitalWrite(epd_pins.cs, LOW);
   SPI.transfer(data);
-  SPI.endTransaction();
   digitalWrite(epd_pins.cs, HIGH);
+  SPI.endTransaction();
 }
 
 int EpdIf::IfInit(void) {
