@@ -59,8 +59,6 @@ void renderQR(char *text) {
 }
 
 void epaper_task(void *ignore) {
-  ESP_LOGD(TAG, "task=epaper_task state=wait");
-  // vTaskDelay(10000 / portTICK_PERIOD_MS);
   ESP_LOGD(TAG, "task=epaper_task state=enter");
 
   // wake epaper
