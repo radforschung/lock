@@ -101,6 +101,9 @@ void onEvent(ev_t ev) {
 }
 
 void processLoraParse() {
+  if (loraParseQueue == NULL) {
+    return;
+  }
   MessageBuffer_t recvBuffer;
   if (xQueueReceive(loraParseQueue, &recvBuffer, (TickType_t)0) == pdTRUE) {
     if (recvBuffer.size >= 2 && recvBuffer.payload[1] == 0x01) {
@@ -137,6 +140,10 @@ bool loraSend(uint8_t port, uint8_t *msg, uint8_t size) {
 void processSendBuffer() {
   // skip if LoRa is busy and don't get data from the queue
   if ((LMIC.opmode & (OP_JOINING | OP_REJOIN | OP_TXDATA | OP_POLL)) != 0) {
+    return;
+  }
+
+  if (loraSendQueue == NULL) {
     return;
   }
 
