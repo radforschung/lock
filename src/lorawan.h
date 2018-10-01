@@ -91,6 +91,4 @@ void processLoraParse();
 bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);
 void setupLoRa();
 
-const unsigned TX_INTERVAL2 = 60;
-
 #endif // _lock_lorawan_h

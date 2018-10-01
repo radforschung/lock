@@ -17,6 +17,5 @@
 #include "serial.h"
 
 static const char *TAG = "main";
-const unsigned TX_INTERVAL = 60;
 
 #endif // _lock_main_h
