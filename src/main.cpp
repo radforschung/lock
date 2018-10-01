@@ -8,53 +8,6 @@
 QueueHandle_t taskQueue;
 
 static osjob_t periodicTask;
-static QueueHandle_t q1;
-
-static void handler(void *args) {
-  gpio_isr_handler_remove(PIN_LOCK_LATCH_SWITCH);
-  gpio_num_t gpio;
-  gpio = PIN_LOCK_LATCH_SWITCH;
-  xQueueSendToBackFromISR(q1, &gpio, NULL);
-}
-
-static void lockswitch_task(void *ignore) {
-  ESP_LOGD(TAG, ">> lockswitch_task");
-  gpio_num_t gpio;
-  q1 = xQueueCreate(10, sizeof(gpio_num_t));
-
-  // TODO clean this up, mode etc is already set in lock.cpp
-  //     only thing to be done is to set INTR_ANYEDGE
-  gpio_config_t gpioConfig;
-  gpioConfig.pin_bit_mask = GPIO_SEL_4;
-  gpioConfig.mode = GPIO_MODE_INPUT;
-  gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
-  gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
-  gpioConfig.intr_type = GPIO_INTR_ANYEDGE;
-  gpio_config(&gpioConfig);
-
-  gpio_install_isr_service(0);
-  gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL);
-
-  boolean lastState = false;
-
-  while (1) {
-    BaseType_t rc = xQueueReceive(q1, &gpio, portMAX_DELAY);
-    bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
-    if (lastState != open) {
-      ESP_LOGI(TAG, "Lock state changed: %d", open);
-      xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
-      xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
-      xQueueSend(taskQueue, &TASK_SEND_LOCATION_GPS, portMAX_DELAY);
-    }
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    lastState = open;
-
-    xQueueSend(lockQueue, &LOCK_TASK_PARK, portMAX_DELAY);
-
-    gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL);
-  }
-  vTaskDelete(NULL);
-}
 
 void periodicTaskSubmitter(osjob_t *j) {
   xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
@@ -80,7 +33,7 @@ void setup() {
     ESP_LOGE(TAG, "error=\"error creating task queue\"");
   }
 
-  lockQueue = xQueueCreate(3, 1);
+  lockQueue = xQueueCreate(10, sizeof(int));
   if (lockQueue == NULL) {
     ESP_LOGE(TAG, "error=\"error creating lock queue\"");
   }
@@ -114,18 +67,11 @@ void setup() {
 
   setupLoRa();
 
-  // Create Task for handling switch interrupts
-  xTaskCreate(lockswitch_task,   // Task function.
-              "lockswitch_task", // name of task.
-              10000,             // Stack size of task
-              NULL,              // parameter of the task
-              4,                 // priority of the task
-              NULL);
   xTaskCreate(lock_task,   // Task function.
               "lock_task", // name of task.
               10000,       // Stack size of task
               NULL,        // parameter of the task
-              1,           // priority of the task
+              2,           // priority of the task
               NULL);
   xTaskCreate(wifi_task,   // Task function.
               "wifi_task", // name of task.

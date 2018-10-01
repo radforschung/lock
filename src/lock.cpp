@@ -53,9 +53,29 @@ void Lock::debugSwitch(int source, char *txt, int readout) {
   }
 }
 
+static void lock_isr_handler(void *args) {
+  gpio_isr_handler_remove(PIN_LOCK_LATCH_SWITCH);
+  xQueueSendToBackFromISR(lockQueue, &LOCK_TASK_GPIO_ISR, NULL);
+}
+
 void lock_task(void *ignore) {
   ESP_LOGD(TAG, "task=lock_task state=enter");
   Lock lock = Lock();
+
+  // TODO clean this up, mode etc is already set in lock.cpp
+  //     only thing to be done is to set INTR_ANYEDGE
+  gpio_config_t gpioConfig;
+  gpioConfig.pin_bit_mask = GPIO_SEL_4;
+  gpioConfig.mode = GPIO_MODE_INPUT;
+  gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
+  gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  gpioConfig.intr_type = GPIO_INTR_ANYEDGE;
+  gpio_config(&gpioConfig);
+
+  gpio_install_isr_service(0);
+  gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, lock_isr_handler, NULL);
+
+  boolean lastState = false;
   int task;
   while (1) {
     // wait for activation by queue
@@ -65,7 +85,21 @@ void lock_task(void *ignore) {
     }
     ESP_LOGD(TAG, "task=lock_task state=active");
 
-    if (task == LOCK_TASK_PARK) {
+    if (task == LOCK_TASK_GPIO_ISR) {
+      bool open = digitalRead(PIN_LOCK_LATCH_SWITCH);
+      if (lastState != open) {
+        ESP_LOGI(TAG, "Lock state changed: %d", open);
+        xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
+        xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
+        xQueueSend(taskQueue, &TASK_SEND_LOCATION_GPS, portMAX_DELAY);
+      }
+      vTaskDelay(100 / portTICK_PERIOD_MS);
+      lastState = open;
+
+      xQueueSend(lockQueue, &LOCK_TASK_PARK, portMAX_DELAY);
+
+      gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, lock_isr_handler, NULL);
+    } else if (task == LOCK_TASK_PARK) {
       ESP_LOGD(TAG, "task=lock_task action=park");
       if (!lock.motorIsParked()) {
         lock.open();
