@@ -32,6 +32,7 @@ public:
 private:
   Bounce debounceRotationSwitch;
   Bounce debounceLatchSwitch;
+  void debugSwitch(int source, char *txt, int readout);
 };
 
 /* End of header guard ------------------------------------------------------ */

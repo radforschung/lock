@@ -30,12 +30,23 @@ void Lock::open() {
 
 bool Lock::isOpen() {
   debounceLatchSwitch.update();
-  ESP_LOGD(TAG, "latchSwitch=%d", debounceLatchSwitch.read());
+  debugSwitch(1, "latchSwitch", debounceLatchSwitch.read());
   return (debounceLatchSwitch.read() == HIGH);
 }
 
 bool Lock::motorIsParked() {
   debounceRotationSwitch.update();
-  ESP_LOGD(TAG, "rotationSwitch=%d", debounceRotationSwitch.read());
+  debugSwitch(2, "rotationSwitch", debounceRotationSwitch.read());
   return debounceRotationSwitch.read() == HIGH;
+}
+
+static long lastLockDebugCall = 0;
+static long lastLockDebugSource = 0;
+
+void Lock::debugSwitch(int source, char *txt, int readout) {
+  if ((millis() - lastLockDebugCall) > 500 || source != lastLockDebugSource) {
+    ESP_LOGD(TAG, "%s=%d", txt, readout);
+    lastLockDebugCall = millis();
+    lastLockDebugSource = source;
+  }
 }
