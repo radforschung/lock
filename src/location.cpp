@@ -92,30 +92,50 @@ void gps_task(void *ignore) {
 
     // Valid GPS location:
     if (gps.location.isValid() && gps.location.isUpdated()) {
-      int32_t latitude = gps.location.lat() * 10000;
-      int32_t longitude = gps.location.lng() * 10000;
+      uint8_t txBuffer[10];
+      uint32_t latBin, lngBin;
+      uint16_t alt;
+      uint8_t hdop;
 
-      ESP_LOGI(TAG, "GPS fix, Lat: %ld, Lon: %lu, Sats: %d", latitude,
-               longitude, gps.satellites.value());
+      latBin = ((gps.location.lat() + 90) / 180) * 16777215;
+      lngBin = ((gps.location.lng() + 180) / 360) * 16777215;
 
-      message.push_back(latitude);
-      message.push_back(longitude);
-      message.push_back(gps.satellites.value());
+      txBuffer[0] = (latBin >> 16) & 0xFF;
+      txBuffer[1] = (latBin >> 8) & 0xFF;
+      txBuffer[2] = latBin & 0xFF;
+
+      txBuffer[3] = (lngBin >> 16) & 0xFF;
+      txBuffer[4] = (lngBin >> 8) & 0xFF;
+      txBuffer[5] = lngBin & 0xFF;
+
+      alt = gps.altitude.meters();
+      txBuffer[6] = (alt >> 8) & 0xFF;
+      txBuffer[7] = alt & 0xFF;
+
+      hdop = gps.hdop.hdop() * 10;
+      txBuffer[8] = hdop & 0xFF;
+
+      txBuffer[9] = gps.satellites.value() & 0xFF;
+
+      ESP_LOGI(TAG, "gps: %x %x %x %x %x %x %x %x %x %x", txBuffer[0],
+               txBuffer[1], txBuffer[2], txBuffer[3], txBuffer[4], txBuffer[5],
+               txBuffer[6], txBuffer[7], txBuffer[8], txBuffer[9]);
+
+      for (size_t i = 0; i <= 9; i++) {
+        message.push_back(txBuffer[i]);
+      }
     }
     // no valid GPS location:
     else {
       ESP_LOGI(TAG, "No valid GPS location");
-      message.push_back(0);
-      message.push_back(0);
-      message.push_back(0);
+      for (size_t i = 0; i <= 9; i++) {
+        message.push_back(0);
+      }
     }
 
     // on every loop:
     if (gps.time.isValid() && gps.time.isUpdated()) {
       ESP_LOGI(TAG, "GPS time: %d", gps.time.value());
-      message.push_back(gps.time.value());
-    } else {
-      message.push_back(0);
     }
     ESP_LOGD(TAG, "GPS chars processed: %i, passed checksum: %i",
              gps.charsProcessed(), gps.passedChecksum());
