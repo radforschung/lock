@@ -96,7 +96,7 @@ void lock_task(void *ignore) {
       vTaskDelay(100 / portTICK_PERIOD_MS);
       lastState = open;
 
-      xQueueSend(lockQueue, &LOCK_TASK_PARK, portMAX_DELAY);
+      xQueueSendToFront(lockQueue, &LOCK_TASK_PARK, portMAX_DELAY);
 
       gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, lock_isr_handler, NULL);
     } else if (task == LOCK_TASK_PARK) {
