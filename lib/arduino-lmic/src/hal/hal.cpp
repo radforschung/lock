@@ -77,17 +77,19 @@ static void hal_io_check() {
 static const SPISettings settings(10E6, MSBFIRST, SPI_MODE0);
 
 static void hal_spi_init () {
-    SPI.begin();
+    //SPI.begin();
 }
 
 void hal_pin_nss (u1_t val) {
-    if (!val)
+    if (!val) {
         SPI.beginTransaction(settings);
-    else
+        digitalWrite(lmic_pins.nss, val);
+    } else {
+        digitalWrite(lmic_pins.nss, val);
         SPI.endTransaction();
+    }
 
     //Serial.println(val?">>":"<<");
-    digitalWrite(lmic_pins.nss, val);
 }
 
 // perform SPI transaction with radio
