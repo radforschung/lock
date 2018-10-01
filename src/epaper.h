@@ -21,6 +21,8 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 
+#define PIN_SPI_EPAPER_SS GPIO_NUM_14
+
 // very helpful: https://javl.github.io/image2cpp/
 const unsigned char LOGO_IMAGE_DATA[] PROGMEM = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xf8,

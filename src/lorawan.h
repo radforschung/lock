@@ -48,7 +48,8 @@ extern QueueHandle_t taskQueue;
 #define LMIC_DEBUG_LEVEL 2
 #endif
 
-#define PIN_SPI_SS GPIO_NUM_18   // HPD13A NSS/SEL (Pin4) SPI Chip Select Input
+#define PIN_SPI_LORA_SS                                                        \
+  GPIO_NUM_18                    // HPD13A NSS/SEL (Pin4) SPI Chip Select Input
 #define PIN_SPI_MOSI GPIO_NUM_27 // HPD13A MOSI/DSI (Pin6) SPI Data Input
 #define PIN_SPI_MISO GPIO_NUM_19 // HPD13A MISO/DSO (Pin7) SPI Data Output
 #define PIN_SPI_SCK GPIO_NUM_5   // HPD13A SCK (Pin5) SPI Clock Input

@@ -8,7 +8,7 @@ static const char *TAG = "lora";
 QueueHandle_t loraSendQueue = NULL;
 QueueHandle_t loraParseQueue = NULL;
 
-const lmic_pinmap lmic_pins = {.nss = PIN_SPI_SS,
+const lmic_pinmap lmic_pins = {.nss = PIN_SPI_LORA_SS,
                                .rxtx = LMIC_UNUSED_PIN,
                                .rst = PIN_RST,
                                .dio = {PIN_DIO0, PIN_DIO1, PIN_DIO2}};
