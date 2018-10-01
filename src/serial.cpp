@@ -28,6 +28,12 @@ void processSerial() {
     case 'g':
       xQueueSend(gpsQueue, &nothing, portMAX_DELAY);
       break;
+    case 'l':
+      xQueueSend(epaperQueue, &EPAPER_SCREEN_LOGO, portMAX_DELAY);
+      break;
+    case 'q':
+      xQueueSend(epaperQueue, &EPAPER_SCREEN_QR, portMAX_DELAY);
+      break;
     default:
       ESP_LOGW(TAG, "error=\"unknown serial command\"");
       break;

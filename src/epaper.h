@@ -23,6 +23,8 @@
 
 #define PIN_SPI_EPAPER_SS GPIO_NUM_14
 
+extern QueueHandle_t epaperQueue;
+
 // very helpful: https://javl.github.io/image2cpp/
 const unsigned char LOGO_IMAGE_DATA[] PROGMEM = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xf8,
@@ -444,9 +446,7 @@ const unsigned char LOGO_IMAGE_DATA[] PROGMEM = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void setupEpaper();
-void wakeEpaper();
-void renderQR(char *text);
 
+void epaper_task(void *ignore);
 /* End of header guard ------------------------------------------------------ */
 #endif // _lock_epaper_h

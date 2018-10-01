@@ -19,11 +19,17 @@
 
 extern QueueHandle_t wifiQueue;
 extern QueueHandle_t gpsQueue;
+extern QueueHandle_t epaperQueue;
 extern QueueHandle_t taskQueue;
 static const int TASK_UNLOCK = 1;
 static const int TASK_RESTART = 2;
 static const int TASK_SEND_LOCK_STATUS = 3;
 static const int TASK_SEND_LOCATION_WIFI = 4;
 static const int TASK_SEND_LOCATION_GPS = 5;
+
+// FIXME: move!
+static const int EPAPER_SCREEN_EMPTY = 0;
+static const int EPAPER_SCREEN_LOGO = 1;
+static const int EPAPER_SCREEN_QR = 2;
 
 #endif // _lock_globals_h
