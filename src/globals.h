@@ -28,8 +28,8 @@ static const int TASK_SEND_LOCATION_WIFI = 4;
 static const int TASK_SEND_LOCATION_GPS = 5;
 
 // FIXME: move!
-static const int EPAPER_SCREEN_EMPTY = 0;
-static const int EPAPER_SCREEN_LOGO = 1;
-static const int EPAPER_SCREEN_QR = 2;
+static const int EPAPER_SCREEN_EMPTY = 1;
+static const int EPAPER_SCREEN_LOGO = 2;
+static const int EPAPER_SCREEN_QR = 3;
 
 #endif // _lock_globals_h

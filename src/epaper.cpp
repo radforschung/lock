@@ -113,6 +113,7 @@ void epaper_task(void *ignore) {
 
       epd.DisplayFrame();
     }
+    screen = 0;
 
     epd.Sleep();
     vTaskDelay(500 / portTICK_PERIOD_MS);
