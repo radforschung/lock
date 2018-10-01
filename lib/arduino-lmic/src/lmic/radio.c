@@ -520,7 +520,7 @@ static void txlora () {
 
 // start transmitter (buf=LMIC.frame, len=LMIC.dataLen)
 static void starttx () {
-    ASSERT( (readReg(RegOpMode) & OPMODE_MASK) == OPMODE_SLEEP );
+    ASSERT( (readReg(RegOpMode) & OPMODE_MASK) == OPMODE_SLEEP || (readReg(RegOpMode) & OPMODE_MASK) == OPMODE_STANDBY );
     if(getSf(LMIC.rps) == FSK) { // FSK modem
         txfsk();
     } else { // LoRa modem
