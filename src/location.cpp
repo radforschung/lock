@@ -117,7 +117,7 @@ void gps_task(void *ignore) {
 
       txBuffer[9] = gps.satellites.value() & 0xFF;
 
-      ESP_LOGI(TAG, "gps: %x %x %x %x %x %x %x %x %x %x", txBuffer[0],
+      ESP_LOGI(TAG, "gps=\"%x %x %x %x %x %x %x %x %x %x\"", txBuffer[0],
                txBuffer[1], txBuffer[2], txBuffer[3], txBuffer[4], txBuffer[5],
                txBuffer[6], txBuffer[7], txBuffer[8], txBuffer[9]);
 
@@ -127,7 +127,7 @@ void gps_task(void *ignore) {
     }
     // no valid GPS location:
     else {
-      ESP_LOGI(TAG, "No valid GPS location");
+      ESP_LOGI(TAG, "gps=\"invalid\"");
       for (size_t i = 0; i <= 9; i++) {
         message.push_back(0);
       }
@@ -135,10 +135,10 @@ void gps_task(void *ignore) {
 
     // on every loop:
     if (gps.time.isValid() && gps.time.isUpdated()) {
-      ESP_LOGI(TAG, "GPS time: %d", gps.time.value());
+      ESP_LOGI(TAG, "gps_time=%d", gps.time.value());
     }
-    ESP_LOGD(TAG, "GPS chars processed: %i, passed checksum: %i",
-             gps.charsProcessed(), gps.passedChecksum());
+    ESP_LOGD(TAG, "chars=%i passed=%i", gps.charsProcessed(),
+             gps.passedChecksum());
 
     // FIXME: send queue: message
     loraSend(LORA_PORT_LOCATION_GPS, message.data(), message.size());
