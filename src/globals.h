@@ -32,4 +32,8 @@ static const int EPAPER_SCREEN_EMPTY = 1;
 static const int EPAPER_SCREEN_LOGO = 2;
 static const int EPAPER_SCREEN_QR = 3;
 
+static const int LOCK_TASK_UNLOCK = 1;
+static const int LOCK_TASK_PARK = 2;
+static const int LOCK_TASK_SEND_STATUS = 3;
+
 #endif // _lock_globals_h

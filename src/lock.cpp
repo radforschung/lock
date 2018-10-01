@@ -3,6 +3,8 @@
 
 static const char *TAG = "lock";
 
+QueueHandle_t lockQueue = NULL;
+
 Lock::Lock() {
   debounceRotationSwitch = Bounce();
   debounceLatchSwitch = Bounce();
@@ -49,4 +51,35 @@ void Lock::debugSwitch(int source, char *txt, int readout) {
     lastLockDebugCall = millis();
     lastLockDebugSource = source;
   }
+}
+
+void lock_task(void *ignore) {
+  ESP_LOGD(TAG, "task=lock_task state=enter");
+  Lock lock = Lock();
+  int task;
+  while (1) {
+    // wait for activation by queue
+    ESP_LOGD(TAG, "task=lock_task state=waiting");
+    if (xQueueReceive(lockQueue, &task, portMAX_DELAY) != pdPASS) {
+      continue;
+    }
+    ESP_LOGD(TAG, "task=lock_task state=active");
+
+    if (task == LOCK_TASK_PARK) {
+      ESP_LOGD(TAG, "task=lock_task action=park");
+      if (!lock.motorIsParked()) {
+        lock.open();
+      }
+    } else if (task == LOCK_TASK_UNLOCK) {
+      ESP_LOGD(TAG, "task=lock_task action=unlock");
+      lock.open();
+    } else if (task == LOCK_TASK_SEND_STATUS) {
+      ESP_LOGD(TAG, "task=lock_task action=send");
+      uint8_t msg[] = {0x01, (uint8_t)((!lock.isOpen()) ? 0x01 : 0x02)};
+      loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
+    }
+    task = 0;
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+  }
+  vTaskDelete(NULL);
 }

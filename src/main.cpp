@@ -49,11 +49,7 @@ static void lockswitch_task(void *ignore) {
     vTaskDelay(100 / portTICK_PERIOD_MS);
     lastState = open;
 
-    // TODO This might be better suited within another task,
-    // the scheduler sometimes complains about exceeding watchdog limits
-    if (open && !lock.motorIsParked()) {
-      lock.open();
-    }
+    xQueueSend(lockQueue, &LOCK_TASK_PARK, portMAX_DELAY);
 
     gpio_isr_handler_add(PIN_LOCK_LATCH_SWITCH, handler, NULL);
   }
@@ -78,11 +74,15 @@ void setup() {
 
   Serial.begin(115200);
   delay(1000);
-  lock = Lock();
 
   taskQueue = xQueueCreate(10, sizeof(int));
   if (taskQueue == NULL) {
     ESP_LOGE(TAG, "error=\"error creating task queue\"");
+  }
+
+  lockQueue = xQueueCreate(3, 1);
+  if (lockQueue == NULL) {
+    ESP_LOGE(TAG, "error=\"error creating lock queue\"");
   }
 
   gpsQueue = xQueueCreate(3, 1);
@@ -120,6 +120,12 @@ void setup() {
               10000,             // Stack size of task
               NULL,              // parameter of the task
               4,                 // priority of the task
+              NULL);
+  xTaskCreate(lock_task,   // Task function.
+              "lock_task", // name of task.
+              10000,       // Stack size of task
+              NULL,        // parameter of the task
+              1,           // priority of the task
               NULL);
   xTaskCreate(wifi_task,   // Task function.
               "wifi_task", // name of task.
@@ -159,7 +165,7 @@ void loop() {
       switch (task) {
       case TASK_UNLOCK:
         ESP_LOGD(TAG, "task=unlock");
-        lock.open();
+        xQueueSend(lockQueue, &LOCK_TASK_UNLOCK, portMAX_DELAY);
         break;
       case TASK_RESTART:
         ESP_LOGD(TAG, "task=restart");
@@ -167,7 +173,7 @@ void loop() {
         break;
       case TASK_SEND_LOCK_STATUS:
         ESP_LOGD(TAG, "task=\"send lock status\"");
-        sendLockStatus();
+        xQueueSend(lockQueue, &LOCK_TASK_SEND_STATUS, portMAX_DELAY);
         break;
       case TASK_SEND_LOCATION_WIFI:
         ESP_LOGD(TAG, "task=\"send location wifi\"");

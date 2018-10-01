@@ -1,8 +1,6 @@
 #include "globals.h"
 #include "lock.h"
 
-extern Lock lock;
-
 static const char *TAG = "lora";
 
 QueueHandle_t loraSendQueue = NULL;
@@ -183,9 +181,4 @@ void setupLoRa() {
   ESP_LOGI(TAG, "task=lorawan_loop state=create");
   xTaskCreatePinnedToCore(lorawan_loop, "loraloop", 2048, (void *)1,
                           (5 | portPRIVILEGE_BIT), NULL, 1);
-}
-
-void sendLockStatus() {
-  uint8_t msg[] = {0x01, (uint8_t)((!lock.isOpen()) ? 0x01 : 0x02)};
-  loraSend(LORA_PORT_LOCK_STATUS, msg, sizeof(msg));
 }

@@ -14,6 +14,8 @@
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
+extern QueueHandle_t lockQueue;
+
 /* Exported macro ------------------------------------------------------------*/
 
 #define PIN_LOCK_MOTOR GPIO_NUM_13
@@ -34,6 +36,8 @@ private:
   Bounce debounceLatchSwitch;
   void debugSwitch(int source, char *txt, int readout);
 };
+
+void lock_task(void *ignore);
 
 /* End of header guard ------------------------------------------------------ */
 #endif // _lock_lock_h
