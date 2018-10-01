@@ -105,6 +105,9 @@ void epaper_task(void *ignore) {
       lv_label_set_text(label1, "radforschung.org");
       lv_obj_align(label1, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
 
+      // we don't keep a thread running for rendering
+      // increasing the tick and having LV_REFR_PERIOD set to 1
+      // allows us to render every time
       lv_tick_inc(1);
       lv_task_handler();
 
