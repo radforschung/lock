@@ -51,11 +51,13 @@ void lorawan_init(uint8_t sequenceNum) {
 // LMIC FreeRTos Task
 void lorawan_loop(void *pvParameters) {
   configASSERT(((uint32_t)pvParameters) == 1); // FreeRTOS check
+  ESP_LOGI(TAG, "task=lorawan_loop state=active");
   while (1) {
     os_runloop_once();
     // reset watchdog # CONFIG_FREERTOS_HZ=1000
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
+  vTaskDelete(NULL);
 }
 
 void onEvent(ev_t ev) {
@@ -178,7 +180,7 @@ void setupLoRa() {
   lorawan_init(sequenceNum);
   pref.end();
 
-  ESP_LOGI(TAG, "start=loratask");
+  ESP_LOGI(TAG, "task=lorawan_loop state=create");
   xTaskCreatePinnedToCore(lorawan_loop, "loraloop", 2048, (void *)1,
                           (5 | portPRIVILEGE_BIT), NULL, 1);
 }
