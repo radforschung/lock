@@ -44,6 +44,7 @@ static void lockswitch_task(void *ignore) {
       ESP_LOGI(TAG, "Lock state changed: %d", open);
       xQueueSend(taskQueue, &TASK_SEND_LOCK_STATUS, portMAX_DELAY);
       xQueueSend(taskQueue, &TASK_SEND_LOCATION_WIFI, portMAX_DELAY);
+      xQueueSend(taskQueue, &TASK_SEND_LOCATION_GPS, portMAX_DELAY);
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
     lastState = open;
