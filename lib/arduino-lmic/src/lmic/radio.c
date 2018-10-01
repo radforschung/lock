@@ -657,7 +657,7 @@ static void rxfsk (u1_t rxmode) {
 }
 
 static void startrx (u1_t rxmode) {
-    ASSERT( (readReg(RegOpMode) & OPMODE_MASK) == OPMODE_SLEEP );
+    ASSERT( (readReg(RegOpMode) & OPMODE_MASK) == OPMODE_SLEEP || (readReg(RegOpMode) & OPMODE_MASK) == OPMODE_STANDBY );
     if(getSf(LMIC.rps) == FSK) { // FSK modem
         rxfsk(rxmode);
     } else { // LoRa modem
