@@ -81,7 +81,7 @@ void epaper_task(void *ignore) {
   while (1) {
     // wait for activation by queue
     ESP_LOGD(TAG, "task=epaper_task state=waiting");
-    if (xQueueReceive(epaperQueue, &screen, portMAX_DELAY) != pdPASS) {
+    if (xQueueReceive(epaperQueue, &screen, portMAX_DELAY) != pdTRUE) {
       continue;
     }
     ESP_LOGD(TAG, "task=epaper_task state=active");

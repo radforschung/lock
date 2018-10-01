@@ -106,8 +106,7 @@ void loop() {
   void *nothing;
   while (1) {
     int task;
-    xQueueReceive(taskQueue, &task, 0);
-    if (task) {
+    if (xQueueReceive(taskQueue, &task, 0) == pdTRUE) {
       switch (task) {
       case TASK_UNLOCK:
         ESP_LOGD(TAG, "task=unlock");
@@ -136,8 +135,8 @@ void loop() {
       task = 0;
     }
 
-    processSendBuffer();
-    processLoraParse();
+    processSendBuffer(); // FIXME: move into lorawan_loop
+    processLoraParse();  // FIXME: move into lorawan_loop
     processSerial();
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);

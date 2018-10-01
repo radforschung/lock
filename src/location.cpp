@@ -55,7 +55,7 @@ void wifi_task(void *ignore) {
   while (1) {
     // wait for activation by queue
     ESP_LOGD(TAG, "task=wifi_task state=waiting");
-    if (xQueueReceive(wifiQueue, &noMessage, portMAX_DELAY) != pdPASS) {
+    if (xQueueReceive(wifiQueue, &noMessage, portMAX_DELAY) != pdTRUE) {
       continue;
     }
     ESP_LOGD(TAG, "task=wifi_task state=active");
@@ -76,7 +76,7 @@ void gps_task(void *ignore) {
   while (1) {
     // wait for activation by queue
     ESP_LOGD(TAG, "task=gps_task state=waiting");
-    if (xQueueReceive(gpsQueue, &noMessage, portMAX_DELAY) != pdPASS) {
+    if (xQueueReceive(gpsQueue, &noMessage, portMAX_DELAY) != pdTRUE) {
       continue;
     }
     ESP_LOGD(TAG, "task=gps_task state=active");

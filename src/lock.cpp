@@ -80,7 +80,7 @@ void lock_task(void *ignore) {
   while (1) {
     // wait for activation by queue
     ESP_LOGD(TAG, "task=lock_task state=waiting");
-    if (xQueueReceive(lockQueue, &task, portMAX_DELAY) != pdPASS) {
+    if (xQueueReceive(lockQueue, &task, portMAX_DELAY) != pdTRUE) {
       continue;
     }
     ESP_LOGD(TAG, "task=lock_task state=active");
