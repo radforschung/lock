@@ -48,10 +48,20 @@ void lorawan_init(uint8_t sequenceNum) {
 
 // LMIC FreeRTos Task
 void lorawan_loop(void *pvParameters) {
+  ESP_LOGD(TAG, "task=lorawan_loop state=enter");
   configASSERT(((uint32_t)pvParameters) == 1); // FreeRTOS check
+
+  Preferences pref;
+  pref.begin(PREFERENCES_KEY, false);
+  uint8_t sequenceNum = pref.getUInt("counter", 1);
+  lorawan_init(sequenceNum);
+  pref.end();
+
   ESP_LOGI(TAG, "task=lorawan_loop state=active");
   while (1) {
     os_runloop_once();
+    processSendBuffer();
+    processLoraParse();
     // reset watchdog # CONFIG_FREERTOS_HZ=1000
     vTaskDelay(10 / portTICK_PERIOD_MS);
   }
@@ -159,26 +169,4 @@ void processSendBuffer() {
              sendBuffer.port, LMIC.seqnoUp, sendBuffer.size);
     pref.end();
   }
-}
-
-void setupLoRa() {
-  loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
-  if (loraSendQueue == 0) {
-    ESP_LOGE(TAG, "error=\"creation of lora send queue failed\"");
-  }
-
-  loraParseQueue = xQueueCreate(LORA_PARSE_QUEUE_SIZE, sizeof(MessageBuffer_t));
-  if (loraParseQueue == 0) {
-    ESP_LOGE(TAG, "error=\"creation of lora parse queue failed\"");
-  }
-
-  Preferences pref;
-  pref.begin(PREFERENCES_KEY, false);
-  uint8_t sequenceNum = pref.getUInt("counter", 1);
-  lorawan_init(sequenceNum);
-  pref.end();
-
-  ESP_LOGI(TAG, "task=lorawan_loop state=create");
-  xTaskCreatePinnedToCore(lorawan_loop, "loraloop", 2048, (void *)1,
-                          (5 | portPRIVILEGE_BIT), NULL, 1);
 }

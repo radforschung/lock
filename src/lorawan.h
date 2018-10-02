@@ -89,6 +89,5 @@ void lorawan_init(uint8_t sequenceNum);
 void processSendBuffer();
 void processLoraParse();
 bool loraSend(uint8_t port, uint8_t *msg, uint8_t size);
-void setupLoRa();
 
 #endif // _lock_lorawan_h

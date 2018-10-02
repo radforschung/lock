@@ -38,6 +38,16 @@ void setup() {
     ESP_LOGE(TAG, "error=\"error creating lock queue\"");
   }
 
+  loraSendQueue = xQueueCreate(LORA_SEND_QUEUE_SIZE, sizeof(MessageBuffer_t));
+  if (loraSendQueue == NULL) {
+    ESP_LOGE(TAG, "error=\"creation of lora send queue failed\"");
+  }
+
+  loraParseQueue = xQueueCreate(LORA_PARSE_QUEUE_SIZE, sizeof(MessageBuffer_t));
+  if (loraParseQueue == NULL) {
+    ESP_LOGE(TAG, "error=\"creation of lora parse queue failed\"");
+  }
+
   gpsQueue = xQueueCreate(3, 1);
   if (gpsQueue == NULL) {
     ESP_LOGE(TAG, "error=\"error creating gps queue\"");
@@ -65,7 +75,13 @@ void setup() {
   pinMode(PIN_SPI_MOSI, OUTPUT);
   SPI.begin(PIN_SPI_SCK, PIN_SPI_MISO, PIN_SPI_MOSI, 0x00);
 
-  setupLoRa();
+  xTaskCreatePinnedToCore(lorawan_loop,            // Task function.
+                          "loraloop",              // name of task.
+                          2048,                    // Stack size of task
+                          (void *)1,               // parameter of the task
+                          (5 | portPRIVILEGE_BIT), // priority of the task
+                          NULL,                    // constpvCreatedTask
+                          1);                      // xCoreID
 
   xTaskCreate(lock_task,   // Task function.
               "lock_task", // name of task.
@@ -135,8 +151,6 @@ void loop() {
       task = 0;
     }
 
-    processSendBuffer(); // FIXME: move into lorawan_loop
-    processLoraParse();  // FIXME: move into lorawan_loop
     processSerial();
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
