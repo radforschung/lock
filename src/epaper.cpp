@@ -99,10 +99,16 @@ void epaper_task(void *ignore) {
       epd.DisplayFrame();
     } else if (screen == EPAPER_SCREEN_QR) {
       paint.Clear(UNCOLORED);
-      renderQR("https://radforschung.org");
+      String id = String(DEVADDR, HEX);
+      String qrContent = String("https://radforschung.org/l/" + id);
+
+      const uint8_t size = qrContent.length();
+      char *qrChar = new char[size + 1]; // we need extra char for NUL
+      memcpy(qrChar, qrContent.c_str(), size + 1);
+      renderQR(qrChar);
 
       lv_obj_t *label1 = lv_label_create(lv_scr_act(), NULL);
-      lv_label_set_text(label1, "radforschung.org");
+      lv_label_set_text(label1, id.c_str());
       lv_obj_align(label1, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
 
       // we don't keep a thread running for rendering
