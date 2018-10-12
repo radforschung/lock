@@ -53,7 +53,7 @@ void Lock::debugSwitch(int source, char *txt, int readout) {
   }
 }
 
-static void lock_isr_handler(void *args) {
+static void IRAM_ATTR lock_isr_handler(void *args) {
   gpio_isr_handler_remove(PIN_LOCK_LATCH_SWITCH);
   xQueueSendToBackFromISR(lockQueue, &LOCK_TASK_GPIO_ISR, NULL);
 }
