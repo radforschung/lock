@@ -89,6 +89,12 @@ void setup() {
               NULL,        // parameter of the task
               2,           // priority of the task
               NULL);
+  xTaskCreate(button_task,   // Task function.
+              "button_task", // name of task.
+              10000,         // Stack size of task
+              NULL,          // parameter of the task
+              2,             // priority of the task
+              NULL);
   xTaskCreate(wifi_task,   // Task function.
               "wifi_task", // name of task.
               10000,       // Stack size of task
