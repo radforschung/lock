@@ -24,6 +24,7 @@ extern QueueHandle_t lockQueue;
 #define PIN_LOCK_ROTATION_SWITCH GPIO_NUM_2
 // latch switch: (PULLUP!) LOW: closed, HIGH: open
 #define PIN_LOCK_LATCH_SWITCH GPIO_NUM_4
+#define PIN_LOCK_LATCH_SWITCH_SEL GPIO_SEL_4
 
 /* Exported functions ------------------------------------------------------- */
 class Lock {

@@ -65,7 +65,7 @@ void lock_task(void *ignore) {
   // TODO clean this up, mode etc is already set in lock.cpp
   //     only thing to be done is to set INTR_ANYEDGE
   gpio_config_t gpioConfig;
-  gpioConfig.pin_bit_mask = GPIO_SEL_4;
+  gpioConfig.pin_bit_mask = PIN_LOCK_LATCH_SWITCH_SEL;
   gpioConfig.mode = GPIO_MODE_INPUT;
   gpioConfig.pull_up_en = GPIO_PULLUP_ENABLE;
   gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;

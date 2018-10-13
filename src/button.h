@@ -17,6 +17,7 @@
 /* Exported macro ------------------------------------------------------------*/
 
 #define PIN_BUTTON GPIO_NUM_26
+#define PIN_BUTTON_SEL GPIO_SEL_26
 
 /* Exported functions ------------------------------------------------------- */
 
