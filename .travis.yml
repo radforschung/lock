@@ -31,4 +31,4 @@ install:
     - platformio update
 script:
     - cp src/config.sample.h src/config.h
-    - platformio ci --project-conf=platformio.ini .
+    - platformio run
