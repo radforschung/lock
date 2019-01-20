@@ -22,10 +22,11 @@ void lorawan_init(uint8_t sequenceNum) {
 
   // reset LMIC MAC state
   LMIC_reset();
+  LMIC_setLinkCheckMode(0);
 
   // This tells LMIC to make the receive windows bigger, in case your clock is
   // 1% faster or slower.
-  LMIC_setClockError(MAX_CLOCK_ERROR * 1 / 100);
+  LMIC_setClockError(MAX_CLOCK_ERROR * CLOCK_ERROR_PROCENTAGE / 100);
 
   // Set static session parameters.
   // copy for esp
